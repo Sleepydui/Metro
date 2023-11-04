@@ -45,7 +45,7 @@ export default {
           const cityName = city.name;
           const thiscity = Object.values(city.lines);
           const cityData = this.cityCoordinates.find(d => d.城市 === cityName);
-          if (cityData && cityData.GDP_per_capita) {
+          if (cityData) {
             city.gdp = cityData.GDP_per_capita;
             city.loc_num = cityData.loc_num;
             city.面积 = cityData.面积;
@@ -57,8 +57,8 @@ export default {
         }); 
 
         // 根据城市位置序号从大到小排序
-        this.cities.sort((a, b) => a.loc_num - b.loc_num);
-        // this.cities.sort((a, b) => b.面积 - a.面积);
+        // this.cities.sort((a, b) => a.loc_num - b.loc_num);
+        this.cities.sort((a, b) => b.面积 - a.面积);
         // this.cities.sort((a, b) => b.gdp - a.gdp);
         //console.log(this.cities)
 
@@ -120,7 +120,7 @@ export default {
             let y = parseInt(i / columns) * (rectWidth + totalMargin);
             return `translate(${x},${y})`;
           });
-
+          console.log(this.cities)
         // 添加矩形
         squares.append("rect")
             .attr("class", "border")
@@ -227,10 +227,11 @@ export default {
               //console.log(cityName)
               //console.log(cityScale)
 
-            const startX = cityCenterX+(d["起点站经度"]-longitude)*cityScale;
+            const startX = cityCenterX-(d["起点站经度"]-longitude)*cityScale;
             const startY = cityCenterY+(d["起点站纬度"]-latitude)*cityScale;
-            const endX = cityCenterX+(d["终点站经度"]-longitude)*cityScale;
+            const endX = cityCenterX-(d["终点站经度"]-longitude)*cityScale;
             const endY = cityCenterY+(d["终点站纬度"]-latitude)*cityScale;
+
 
 
               //三角函数定义线长
@@ -266,7 +267,7 @@ export default {
 
                 // 合并四个元素为一个字符串
                 // var textContent = "线路名称："+d.线路 +"车型编组："+d.车型编组+"车站数："+d.车站数+"首发时间："+d.首发时间;
-                var textContent = d.线路 +"："+d.车型编组
+                // var textContent = d.线路 +"："+d.车型编组
 
                 // // 计算线路长度
                 // var lineLength = Math.sqrt(Math.pow(extendedEndX - extendedStartX, 2) + Math.pow(extendedEndY - extendedStartY, 2));
@@ -408,7 +409,7 @@ export default {
 
               // 在SVG中添加一个文本元素
               currentText = currentSquare.append("text")
-                  .style("font-size", "3px")
+                  .style("font-size", "5px")
                   .style("fill", "white")
                   .style("font-weight", "bold")  //不加粗用5px
                   ;
