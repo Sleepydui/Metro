@@ -49,7 +49,7 @@ export default {
             city.gdp = cityData.GDP_per_capita;
             city.loc_num = cityData.loc_num;
             city.面积 = cityData.面积;
-            city.城市名称 = cityData.城市;
+            city.城市名称 = cityData.城市名称;
             city.城市英文 = cityData.城市英文;
             city.经度 = cityData.经度;
             city.纬度 = cityData.纬度;
@@ -58,7 +58,7 @@ export default {
 
         // 根据城市位置序号从大到小排序
         // this.cities.sort((a, b) => a.loc_num - b.loc_num);
-        this.cities.sort((a, b) => b.面积 - a.面积);
+        // this.cities.sort((a, b) => b.面积 - a.面积);
         // this.cities.sort((a, b) => b.gdp - a.gdp);
         //console.log(this.cities)
 
@@ -67,7 +67,7 @@ export default {
         let containerWidth = this.width * 1.04;
         let containerHeight = this.height; // 考虑到只占画布的 85%
         let containerArea = containerWidth * containerHeight;
-        let totalMargin = containerWidth * 0.025;
+        let totalMargin = containerWidth * 0.02;
 
         // 首先根据数据集的大小计算出矩形的宽度
         let rectWidth = Math.sqrt(containerArea / (this.cities.length)) - totalMargin;
@@ -108,7 +108,7 @@ export default {
           squareGroup = d3.select(this.$el)
             .append('g')
             .classed('drawSquare', true)
-            .attr('transform', `translate(${this.height*0.07},${0})`)
+            .attr('transform', `translate(${this.height*0.05},${0})`)
         }
         
         const squares = squareGroup.selectAll('.square')
@@ -134,31 +134,31 @@ export default {
           // 添加下面的文字
             squares.append("text")
             .attr("class", "city-name")
-            .attr("x", rectWidth/9)
+            .attr("x", rectWidth/9 + 4)
             .attr("y", rectWidth + 17)
             .attr("text-anchor", "middle")
-            .attr("font-size", "0.6em")
+            .attr("font-size", "0.3em")
             .attr("fill", "white")
             .text(d => d.城市名称);
 
             squares.append("text")
             .attr("class", "city-nameen")
             .attr("x", rectWidth/10 - 10)
-            .attr("y", rectWidth + 31)
-            .attr("font-size", "0.6em")
+            .attr("y", rectWidth + 25)
+            .attr("font-size", "0.3em")
             .attr("fill", "white")
             .text(d => d.城市英文);
 
 
         // 定义宽度
         const strokeWidthScale = d3.scaleLinear()
-            .domain([0, 0.3, 1]) // assuming "归一化覆盖率" is between 0 and 1
-            .range([1, 14, 15]); // map to a range of stroke widths
+            .domain([0,0.01,0.05,0.5,  1]) // assuming "归一化覆盖率" is between 0 and 1
+            .range([1,2,10, 15, 20]); // map to a range of stroke widths
         
         // 定义圆的半径比例尺
         const radiusScale = d3.scaleLinear()
             .domain([0,0.1,0.3, 1]) // 假设 "归一化覆盖率" 在 0 和 1 之间
-            .range([rectWidth/6,rectWidth/2,rectWidth/1.5]); // 映射到半径范围
+            .range([rectWidth/4,rectWidth/2,rectWidth/1.5]); // 映射到半径范围
 
         // 定义小正方形的蒙版 定义 clipPath
         squares.append("clipPath")
@@ -311,8 +311,8 @@ export default {
                       .style("fill", "none")
                       .style("stroke", d => d.color || "white")
                       .style('stroke-opacity', d => 0.9)
-                      .style("stroke-width", d => strokeWidthScale(d["归一化覆盖率"]));
-                      // .attr("clip-path", "url(#city-square-clip)");
+                      .style("stroke-width", d => strokeWidthScale(d["归一化覆盖率"]))
+                      .attr("clip-path", "url(#city-square-clip)");
 
                 // 定义一个路径元素，并将其设置为圆周的形状
                 // d3.select(this)
@@ -409,7 +409,7 @@ export default {
 
               // 在SVG中添加一个文本元素
               currentText = currentSquare.append("text")
-                  .style("font-size", "5px")
+                  .style("font-size", "3px")
                   .style("fill", "white")
                   .style("font-weight", "bold")  //不加粗用5px
                   ;
@@ -606,13 +606,14 @@ export default {
                 clickedSquare
                   .transition()
                   .duration(500)
-                  .attr("transform", `translate(100,0) scale(5.5)`)
+                  .attr("transform", `translate(100,0) scale(10.5)`)
                   .on("end", function() {
                     // 禁用其他方格的点击事件
                     console.log("Transition ended. Applying new clip-path.");
                     // d3.select(this).on("click", null);
                     // clickedSquare.selectAll("line").attr("clip-path", "url(#page-square-clip)");
                     clickedSquare.selectAll("line").attr("clip-path", null);
+                    clickedSquare.selectAll("circle").attr("clip-path", null);
                     // 在放大完成后显示文本
                     // 在左上角显示城市名称
                     // clickedSquare.append("text")
