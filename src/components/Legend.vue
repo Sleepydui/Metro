@@ -1,5 +1,5 @@
 <template>
-    <image class="legend-image" href="../../public/legend2.svg" x="400" y="-20" width="100%" height="20%" />
+    <image class="legend-image" href="../../public/legend.svg" x=40em y=0em width="60%" height="15%" />
   </template>
   
   

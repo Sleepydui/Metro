@@ -12,15 +12,15 @@
         v-if="rawdata !== null"
       >
 
-      <text class="maintitle" x="1.5em" y="1.5em">全球地铁线路发展历史</text>
-      <text class="subtitle" x="3em" y="4.7em">Evolution of Urban Metro Lines Across the Globe</text>
+      <text class="maintitle" x="1.5em" y="1.7em">全球地铁线路发展历史</text>
+      <text class="subtitle" x="3em" y="4.9em">Evolution of Urban Metro Lines Across the Globe</text>
 
       <g class="legend" :transform="`translate(${0},${0})`">
           <Legend></Legend>
         </g>
 
         <g class = "square"
-          :transform="`translate(${0},${this.size.height*0.2})`"
+          :transform="`translate(${0},${this.size.height*0.18})`"
         >
             <Square
               :width="size.width"
@@ -30,7 +30,7 @@
         </g>
 
         <g class = "timeline"
-          :transform="`translate(${50}, ${this.size.height*0.145})`"
+          :transform="`translate(${50}, ${this.size.height*0.14})`"
         >
             <Timeline
               :width="size.width"

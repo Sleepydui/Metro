@@ -64,8 +64,8 @@ export default {
 
 
         // 计算容器的大小和总的间距
-        let containerWidth = this.width * 1.04;
-        let containerHeight = this.height; // 考虑到只占画布的 85%
+        let containerWidth = this.width;
+        let containerHeight = this.height* 0.9; // 考虑到只占画布的 85%
         let containerArea = containerWidth * containerHeight;
         let totalMargin = containerWidth * 0.02;
 
