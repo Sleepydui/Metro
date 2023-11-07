@@ -12,7 +12,7 @@
         v-if="rawdata !== null"
       >
 
-      <text class="maintitle" x="1.5em" y="1.5em">中国地铁线路发展历史</text>
+      <text class="maintitle" x="1.5em" y="1.5em">全球地铁线路发展历史</text>
       <text class="subtitle" x="3em" y="4.7em">Evolution of Urban Metro Lines Across the Globe</text>
 
       <g class="legend" :transform="`translate(${0},${0})`">
