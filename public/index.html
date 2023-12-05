@@ -9,9 +9,11 @@
   </head>
   <body>
     <noscript>
+      <!-- 监测到浏览器禁了js，就显示这句话 -->
       <strong>We're sorry but <%= htmlWebpackPlugin.options.title %> doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
     </noscript>
     <div id="app"></div>
+    <!-- vue只负责这一块儿东西，全加载在这个上面了 -->
     <!-- built files will be auto injected -->
   </body>
 </html>

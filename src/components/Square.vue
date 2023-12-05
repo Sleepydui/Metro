@@ -1,712 +1,668 @@
 <template>
-
-
-    <g class = 'square'>
-        <!-- <text class="maintitle" x="1.5em" y="1.5em" style="color: white;">全球地铁线路发展历史</text> -->
-    </g>
-
-  </template>
-
+    <Teleport :disabled="!popout" to="#singleCity">
+      <g class="square-wrapper"
+         :id="datum['城市名称']"
+         :transform="transform"
+         ref="wrapper"
+      >
+        <g class="back" ref="back"></g>
+        <g class="square-unit" ref="unit"></g>
+        <g class="button" ref="button"></g>
+      </g>
+    </Teleport>
+</template>
 
 <script>
-import { ref, onMounted, watch, computed } from 'vue'
-import { mapMutations, mapState } from 'vuex'
-import * as d3 from 'd3'
+import * as d3 from 'd3';
+import {Line, LineSegment, Point} from "@/requirements/geometry";
+import SVGTextLength from "@/requirements/SVGTextLength";
+import {mapActions, mapState} from "vuex";
 
 export default {
-  name: 'Square',
-  props: {
-    width: window.innerWidth,
-    height: window.innerHeight,
-  },
-  inject: ['cities', 'cityCoordinates'],
-
-  computed: {
-    ...mapState({
-      rawdata:(state) => state.rawdata,
-      timeRange: (state) => state.timeRange, // 导入 timeRange
-    }),
-  },
-
-  methods: {
-    ...mapMutations([
-      'updateTimeRange', //传入timeRange方法
-    ]),
-
-      drawSquare(){
-        console.log(this.cities)
-        console.log(this.cityCoordinates)
-        if (!this.cities || !this.$el || !this.cityCoordinates) {
-            return;
-        }
-
-        // 更新城市数据，添加面积、经纬度信息
-        this.cities.forEach(city => {
-          const cityName = city.name;
-          const thiscity = Object.values(city.lines);
-          const cityData = this.cityCoordinates.find(d => d.城市 === cityName);
-          if (cityData) {
-            city.gdp = cityData.GDP_per_capita;
-            city.loc_num = cityData.loc_num;
-            city.面积 = cityData.面积;
-            city.城市名称 = cityData.城市名称;
-            city.城市英文 = cityData.城市英文;
-            city.经度 = cityData.经度;
-            city.纬度 = cityData.纬度;
-          }
-        }); 
-
-        // 根据城市位置序号从大到小排序
-        // this.cities.sort((a, b) => a.loc_num - b.loc_num);
-        // this.cities.sort((a, b) => b.面积 - a.面积);
-        // this.cities.sort((a, b) => b.gdp - a.gdp);
-        //console.log(this.cities)
-
-
-        // 计算容器的大小和总的间距
-        let containerWidth = this.width;
-        let containerHeight = this.height* 0.9; // 考虑到只占画布的 85%
-        let containerArea = containerWidth * containerHeight;
-        let totalMargin = containerWidth * 0.02;
-
-        // 首先根据数据集的大小计算出矩形的宽度
-        let rectWidth = Math.sqrt(containerArea / (this.cities.length)) - totalMargin;
-
-        // 计算一行最多可以放置多少个矩形
-        let columns = Math.floor(containerWidth / (rectWidth + totalMargin)) + 2 ;
-        let rows = Math.floor(this.cities.length / columns);
-        let rest = this.cities.length % columns;
-
-        // 根据 rows 和 rest 调整矩形的宽度
-        if (rest <= rows) {
-            rectWidth = containerWidth / (columns + 1) - totalMargin;
-        } else if (rest > rows) {
-            rectWidth = containerWidth / (columns + 2) - totalMargin;
-        }
-
-        // 计算每个矩形的中心点坐标
-        const cityLocations = {};
-        this.cities.forEach(city => {
-          const cityName = city.name;
-          const cityData = this.cityCoordinates.find(d => d.城市 === cityName);
-          //console.log(11111)
-          //console.log(cityData)
-          if (cityData) {
-            const longitude = cityData.经度;
-            const latitude = cityData.纬度;
-            cityLocations[cityName] = { longitude, latitude };
-          }
-        });
-   
-        const cityCenterX = rectWidth / 2;
-        const cityCenterY = rectWidth / 2;
-
-
-        //编组
-        let squareGroup = d3.select(this.$el).selectAll('.drawSquare')
-        if (squareGroup.node() === null){
-          squareGroup = d3.select(this.$el)
-            .append('g')
-            .classed('drawSquare', true)
-            .attr('transform', `translate(${this.height*0.05},${0})`)
-        }
-        
-        const squares = squareGroup.selectAll('.square')
-          .data(this.cities)
-          .join('g')
-          .attr('class', 'square')
-          .attr("transform", (d, i) => {
-            let x = (i % columns) * (rectWidth + totalMargin);
-            let y = parseInt(i / columns) * (rectWidth + totalMargin);
-            return `translate(${x},${y})`;
-          });
-          console.log(this.cities)
-        // 添加矩形
-        squares.append("rect")
-            .attr("class", "border")
-            .attr('width', rectWidth) // (xScale(117) - xScale(115))*0.5
-            .attr('height', rectWidth) //  (yScale(39) - yScale(41))*0.5
-            .style('fill', 'white')
-            .style('opacity', '0')
-            .style('stroke-opacity', '0')
-            .style('stroke', 'white');
-
-          // 添加下面的文字
-            squares.append("text")
-            .attr("class", "city-name")
-            .attr("x", rectWidth/9 + 4)
-            .attr("y", rectWidth + 17)
-            .attr("text-anchor", "middle")
-            .attr("font-size", "0.3em")
-            .attr("fill", "white")
-            .text(d => d.城市名称);
-
-            squares.append("text")
-            .attr("class", "city-nameen")
-            .attr("x", rectWidth/10 - 10)
-            .attr("y", rectWidth + 25)
-            .attr("font-size", "0.3em")
-            .attr("fill", "white")
-            .text(d => d.城市英文);
-
-
-        // 定义宽度
-        const strokeWidthScale = d3.scaleLinear()
-            .domain([0,0.01,0.05,0.5,  1]) // assuming "归一化覆盖率" is between 0 and 1
-            .range([1,2,10, 15, 20]); // map to a range of stroke widths
-        
-        // 定义圆的半径比例尺
-        const radiusScale = d3.scaleLinear()
-            .domain([0,0.1,0.3, 1]) // 假设 "归一化覆盖率" 在 0 和 1 之间
-            .range([rectWidth/4,rectWidth/2,rectWidth/1.5]); // 映射到半径范围
-
-        // 定义小正方形的蒙版 定义 clipPath
-        squares.append("clipPath")
-            .attr("id", "city-square-clip")
-            .append("rect")
-            .attr("transform", (d, i) => {
-              let x = (i % columns) * (rectWidth + totalMargin);
-              let y = parseInt(i / columns) * (rectWidth + totalMargin);
-              return `translate(${x},${y})`;
-            })
-            .attr("width", rectWidth) // (xScale(117) - xScale(115))*0.5
-            .attr("height", rectWidth);  //(yScale(39) - yScale(41))*0.5
-        
-        // 定义打开界面的蒙版 clipPath
-        // const pageClipPath = squares.append("clipPath")
-        // .attr("id", "page-square-clip")
-        //     .append("rect")
-        //     .attr("x", -100)
-        //     .attr("y", 0)
-        //     .attr("width", this.width + 200)
-        //     .attr("height", this.height * 0.6);
-
-
-        // 定义缩放比例尺
-        //返回真实长度
-        function getMaxDistance(cityData, cityCenterLongitude, cityCenterLatitude) {
-            let maxDistance = 0;
-                for (const line of cityData) {
-                    const startLongitude = line["起点站经度"];
-                    const startLatitude = line["起点站纬度"];
-                    const endLongitude = line["终点站经度"];
-                    const endLatitude = line["终点站纬度"];
-                    const startDistance = Math.sqrt(
-                        Math.pow(startLongitude - cityCenterLongitude, 2) +
-                        Math.pow(startLatitude - cityCenterLatitude, 2)
-                    );
-                    const endDistance = Math.sqrt(
-                        Math.pow(endLongitude - cityCenterLongitude, 2) +
-                        Math.pow(endLatitude - cityCenterLatitude, 2)
-                    );
-                    maxDistance = Math.max(maxDistance, startDistance, endDistance);
-            }
-            return maxDistance;
-        }
-
-
-    // 定义线条
-    squares.selectAll('.line')
-        // .data(d => Object.values(d.lines))
-        .data(d => {
-          const cityName = d.name;
-          const thiscity = Object.values(d.lines);
-          return Object.values(d.lines).map(line => ({ ...line, cityName, thiscity }));
-        })
-        .enter()
-        .each(function(d) {
-            const thiscity = d.thiscity;
-            const cityName = d.cityName;
-            const cityLocation = cityLocations[cityName];
-            if (cityLocation) {
-              const longitude = cityLocation.longitude;
-              const latitude = cityLocation.latitude;
- 
-              const maxDistance = getMaxDistance(thiscity, longitude, latitude);
-              const cityScale = rectWidth / maxDistance;
-              //console.log(cityName)
-              //console.log(cityScale)
-
-            const startX = cityCenterX-(d["起点站经度"]-longitude)*cityScale;
-            const startY = cityCenterY+(d["起点站纬度"]-latitude)*cityScale;
-            const endX = cityCenterX-(d["终点站经度"]-longitude)*cityScale;
-            const endY = cityCenterY+(d["终点站纬度"]-latitude)*cityScale;
-
-
-
-              //三角函数定义线长
-            const deltaX = endX - startX;
-            const deltaY = endY - startY;
-            const length = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-          
-            //画线
-            //加长线保证一定会超出正方形
-            //环线 length = 0
-            if (length > 0) {
-                const extension = 600;
-                const extendedLength = length + extension;
-                const extendedStartX = startX - (deltaX / length) * extension / 2;
-                const extendedStartY = startY - (deltaY / length) * extension / 2;
-                const extendedEndX = startX + (deltaX / length) * extendedLength;
-                const extendedEndY = startY + (deltaY / length) * extendedLength;
-
-                d3.select(this)
-                  .append("line")   
-                  .attr("x1", extendedStartX)
-                  .attr("y1", extendedStartY)
-                  .attr("x2", extendedEndX)
-                  .attr("y2", extendedEndY)
-                  .style("stroke", d => d.color || "white")
-                  .style("stroke-opacity", d => 0.9)
-                  .style("stroke-width", d => {
-                      const strokeWidth = strokeWidthScale(d["归一化覆盖率"]);
-                      // console.log(`归一化覆盖率: ${d["归一化覆盖率"]}, stroke width: ${strokeWidth}`);
-                      return strokeWidth;
-                  })
-                  .attr("clip-path", "url(#city-square-clip)");
-
-                // 合并四个元素为一个字符串
-                // var textContent = "线路名称："+d.线路 +"车型编组："+d.车型编组+"车站数："+d.车站数+"首发时间："+d.首发时间;
-                // var textContent = d.线路 +"："+d.车型编组
-
-                // // 计算线路长度
-                // var lineLength = Math.sqrt(Math.pow(extendedEndX - extendedStartX, 2) + Math.pow(extendedEndY - extendedStartY, 2));
-
-                // // 创建一个线性比例尺
-                // var scale_text = d3.scaleLinear()
-                //     .domain([0, lineLength])
-                //     .range([0, 1]);
-
-                // // 计算文本数量
-                // var numTexts = Math.floor(lineLength / 10); // 根据需要调整文本数量
-
-                // for (var i = 0; i < numTexts; i++) {
-                //     // 使用比例尺计算文本位置
-                //     var x = extendedStartX + (extendedEndX - extendedStartX) * scale_text(i * 50);
-                //     var y = extendedStartY + (extendedEndY - extendedStartY) * scale_text(i * 50);
-
-                //     d3.select(this)
-                //         .append("text")
-                //         .attr("x", x)
-                //         .attr("y", y)
-                //         .attr("dy", "0em")
-                //         .attr("transform", `rotate(${Math.atan2(deltaY, deltaX) * 180 / Math.PI} ${x} ${y})`)
-                //         .attr("text-anchor", "middle")
-                //         .style("font-size", "5px")
-                //         .style("fill", "white")
-                //         .text(textContent)
-                //         .style("visibility", "hidden") 
-                //         // .attr("clip-path", "url(#city-square-clip)");
-                // }
-
-            //如果是环线
-            } else {
-                  const radius = radiusScale(d["归一化覆盖率"]);
-
-                  d3.select(this)
-                      .append("circle")
-                      .attr("cx", cityCenterX)
-                      .attr("cy", cityCenterY)
-                      .attr("r", radius)
-                      .style("fill", "none")
-                      .style("stroke", d => d.color || "white")
-                      .style('stroke-opacity', d => 0.9)
-                      .style("stroke-width", d => strokeWidthScale(d["归一化覆盖率"]))
-                      .attr("clip-path", "url(#city-square-clip)");
-
-                // 定义一个路径元素，并将其设置为圆周的形状
-                // d3.select(this)
-                //     .append("path")
-                //     .attr("id", "circlePath")
-                //     .attr("d", `M ${cityCenterX - radius} ${cityCenterY} A ${radius} ${radius} 0 1 1 ${cityCenterX + radius} ${cityCenterY}`)
-                //     .style("fill", "none")
-                //     .style("stroke", d => d.color || "white")
-                //     .style('stroke-opacity', d => 0)
-                //     .style("stroke-width", d => strokeWidthScale(d["归一化覆盖率"]));
-
-                // // 在SVG中添加一个文本元素
-                // var text = d3.select(this)
-                //     .append("text")
-                //     .style("font-size", "3px")
-                //     .style("fill", "white");
-
-                // // 在文本元素中添加一个文本路径元素，并将其href属性设置为路径元素的ID
-                // text.append("textPath")
-                //     .attr("href", "#circlePath")
-                //     .attr("startOffset", "50%")
-                //     .style("text-anchor", "middle")
-                //     .html(`线路名称：${d.线路}<br>车型编组：${d.车型编组}<br>车站数：${d.车站数}<br>首发时间：${d.首发时间}`)
-                //     // .style("visibility", "hidden") // 添加这一行
-
-              }
-
-        //开始写展开界面
-          //点某条线会加文本
-          // 定义一个变量来保存当前显示的文本元素
-          let currentText = null;
-          let currentPath = null;
-
-          squares.selectAll('line')
-            .on('click', function(event, d) {
-              if (squareClicked) {
-              // 获取当前点击的square
-              const currentSquare = d3.select(this.parentNode);
-              // 还原上一条线路的样式
-              currentSquare.selectAll('line')
-                .style("stroke", d => d.color || "white")
-                .style('opacity', '0.15')
-                .style("stroke-width", d => {
-                  const strokeWidth = strokeWidthScale(d["归一化覆盖率"]);
-                  // console.log(`归一化覆盖率: ${d["归一化覆盖率"]}, stroke width: ${strokeWidth}`);
-                  return strokeWidth;
-              });
-              currentSquare.selectAll('circle')
-                    .style("stroke", d => d.color || "white")
-                    .style('opacity', '0.15')
-                    .style("stroke-width", d => {
-                      const strokeWidth = strokeWidthScale(d["归一化覆盖率"]);
-                      return strokeWidth;
-                    });
-              // 更改当前线路的样式
-              d3.select(this)
-                // .style('stroke', '#FF37B7')
-                // .style('stroke-width', '16px');
-                .style('opacity', '0.9')
-                .style("stroke-width", d => {
-                  const strokeWidth = strokeWidthScale(d["归一化覆盖率"])+3;
-                  // console.log(`归一化覆盖率: ${d["归一化覆盖率"]}, stroke width: ${strokeWidth}`);
-                  return strokeWidth;
-              });
-
-              // 删除上一条线路的文本
-              if (currentText) {
-                currentText.remove();
-                currentText = null;
-              }
-              if (currentPath) {
-                currentPath.remove();
-              }
-
-              // 计算与当前线段相同的path
-              const line = d3.select(this);
-              let x1 = +line.attr('x1');
-              let y1 = +line.attr('y1');
-              const x2 = +line.attr('x2');
-              const y2 = +line.attr('y2');
-
-              // 更新pathData
-              const pathData = `M ${x1},${y1} L ${x2},${y2}`;
-
-
-              // 在SVG中添加一个path元素，并为其设置一个ID
-              currentPath = currentSquare.append('path')
-                .attr('id', 'linePath')
-                .attr('d', pathData)
-                .style("fill", "none")
-                .style("stroke", d => d.color || "white")
-                .style('stroke-opacity', d => 0)
-                .style("stroke-width", d => strokeWidthScale(d["归一化覆盖率"]));
-
-              // 在SVG中添加一个文本元素
-              currentText = currentSquare.append("text")
-                  .style("font-size", "3px")
-                  .style("fill", "white")
-                  .style("font-weight", "bold")  //不加粗用5px
-                  ;
-
-              // 在文本元素中添加一个文本路径元素，并将其href属性设置为路径元素的ID
-              currentText.append("textPath")
-                  .attr("xlink:href", "#linePath")
-                  .attr("startOffset", "50%")
-                  .style("text-anchor", "middle")
-                  .html(`线路名称 Line Name: ${d.线路}&nbsp;&nbsp;&nbsp;<br>车型编组 Train Formation: ${d.车型编组}&nbsp;&nbsp;&nbsp;<br>车站数 Number of Stations: ${d.车站数}&nbsp;&nbsp;&nbsp;<br>首发时间 Departure Time: ${d.首发时间}&nbsp;&nbsp;&nbsp;线路名称 Line Name: ${d.线路}&nbsp;&nbsp;&nbsp;<br>车型编组 Train Formation: ${d.车型编组}&nbsp;&nbsp;&nbsp;<br>车站数 Number of Stations: ${d.车站数}&nbsp;&nbsp;&nbsp;<br>首发时间 Departure Time: ${d.首发时间}&nbsp;&nbsp;&nbsp;线路名称 Line Name: ${d.线路}&nbsp;&nbsp;&nbsp;<br>车型编组 Train Formation: ${d.车型编组}&nbsp;&nbsp;&nbsp;<br>车站数 Number of Stations: ${d.车站数}&nbsp;&nbsp;&nbsp;<br>首发时间 Departure Time: ${d.首发时间}&nbsp;&nbsp;&nbsp;线路名称 Line Name: ${d.线路}&nbsp;&nbsp;&nbsp;<br>车型编组 Train Formation: ${d.车型编组}&nbsp;&nbsp;&nbsp;<br>车站数 Number of Stations: ${d.车站数}&nbsp;&nbsp;&nbsp;<br>首发时间 Departure Time: ${d.首发时间}&nbsp;&nbsp;&nbsp;线路名称 Line Name: ${d.线路}&nbsp;&nbsp;&nbsp;<br>车型编组 Train Formation: ${d.车型编组}&nbsp;&nbsp;&nbsp;<br>车站数 Number of Stations: ${d.车站数}&nbsp;&nbsp;&nbsp;<br>首发时间 Departure Time: ${d.首发时间}&nbsp;&nbsp;&nbsp;线路名称 Line Name: ${d.线路}&nbsp;&nbsp;&nbsp;<br>车型编组 Train Formation: ${d.车型编组}&nbsp;&nbsp;&nbsp;<br>车站数 Number of Stations: ${d.车站数}&nbsp;&nbsp;&nbsp;<br>首发时间 Departure Time: ${d.首发时间}&nbsp;&nbsp;&nbsp;线路名称 Line Name: ${d.线路}&nbsp;&nbsp;&nbsp;<br>车型编组 Train Formation: ${d.车型编组}&nbsp;&nbsp;&nbsp;<br>车站数 Number of Stations: ${d.车站数}&nbsp;&nbsp;&nbsp;<br>首发时间 Departure Time: ${d.首发时间}&nbsp;&nbsp;&nbsp;线路名称 Line Name: ${d.线路}&nbsp;&nbsp;&nbsp;<br>车型编组 Train Formation: ${d.车型编组}&nbsp;&nbsp;&nbsp;<br>车站数 Number of Stations: ${d.车站数}&nbsp;&nbsp;&nbsp;<br>首发时间 Departure Time: ${d.首发时间}&nbsp;&nbsp;&nbsp;`)
-
-              }
-            });
-
-
-            squares.selectAll('circle')
-                .on('click', function(event, d) {
-                  if (squareClicked) {
-                   // 获取当前点击的square
-                  const currentSquare = d3.select(this.parentNode);
-                  // 还原上一条线路和圆形元素的样式
-                  currentSquare.selectAll('line')
-                    .style("stroke", d => d.color || "white")
-                    .style('opacity', '0.15')
-                    .style("stroke-width", d => {
-                      const strokeWidth = strokeWidthScale(d["归一化覆盖率"]);
-                      return strokeWidth;
-                    });
-                    currentSquare.selectAll('circle')
-                    .style("stroke", d => d.color || "white")
-                    .style('opacity', '0.15')
-                    .style("stroke-width", d => {
-                      const strokeWidth = strokeWidthScale(d["归一化覆盖率"]);
-                      return strokeWidth;
-                    });
-                  // 更改当前圆形元素的样式
-                  d3.select(this)
-                    // .style('stroke', '#FF37B7')
-                    // .style('stroke-width', '10px');
-                    .style('opacity', '0.9')
-                    .style("stroke-width", d => {
-                        const strokeWidth = strokeWidthScale(d["归一化覆盖率"])+3;
-                        // console.log(`归一化覆盖率: ${d["归一化覆盖率"]}, stroke width: ${strokeWidth}`);
-                        return strokeWidth;
-                    });
-                  // 删除上一条线路的文本
-                  if (currentText) {
-                    currentText.remove();
-                    currentText = null;
-                  }
-                  if (currentPath) {
-                    currentPath.remove();
-                  }
-
-                  const circle = d3.select(this);
-                  const cx = +circle.attr('cx');
-                  const cy = +circle.attr('cy');
-                  const r = +circle.attr('r');
-                  const pathData = `M ${cx - r},${cy} A ${r},${r} 0 1,0 ${cx + r},${cy} A ${r},${r} 0 1,0 ${cx - r},${cy}`;
-
-                  // 在SVG中添加一个path元素，并为其设置一个ID
-                  currentPath = currentSquare.append('path')
-                    .attr('id', 'circlePath')
-                    .attr('d', pathData)
-                    .style("fill", "none")
-                    .style("stroke", d => d.color || "white")
-                    .style('stroke-opacity', d => 0)
-                    .style("stroke-width", d => strokeWidthScale(d["归一化覆盖率"]));
-    
-                    // 在SVG中添加一个文本元素
-                  currentText = currentSquare.append("text")
-                      .style("font-size", "3px")
-                      .style("fill", "white")
-                      .style("font-weight", "bold") 
-                      ;
-
-                  // 在文本元素中添加一个文本路径元素，并将其href属性设置为路径元素的ID
-                  currentText.append("textPath")
-                      .attr("xlink:href", "#circlePath")
-                      .attr("startOffset", "50%")
-                      .style("text-anchor", "middle")
-                      .html(`线路名称 Line Name: ${d.线路}&nbsp;&nbsp;&nbsp;<br>车型编组 Train Formation: ${d.车型编组}&nbsp;&nbsp;&nbsp;<br>车站数 Number of Stations: ${d.车站数}&nbsp;&nbsp;&nbsp;<br>首发时间 Departure Time: ${d.首发时间}&nbsp;&nbsp;&nbsp;`)
-
-                  }
-                });
-
-
-// 悬浮小放大 点击大放大
-          let clicked = false;
-          squares.on("mouseover", function() {
-            if (!clicked) {
-              d3.select(this)
-                .transition()
-                .duration(80)
-                .attr("transform", function() {
-                  const currentTransform = d3.select(this).attr("transform");
-                  const scaleIndex = currentTransform.indexOf("scale");
-                  if (scaleIndex !== -1) {
-                    return currentTransform.slice(0, scaleIndex) + "scale(1.2)";
-                  } else {
-                    return currentTransform + " scale(1.2)"; //不变位置，只放大1.2倍
-                  }
-                });
-            }
-          });
-
-          squares.on("mouseout", function() { //悬浮才会放大
-            if (!clicked) {
-              d3.select(this)
-                .transition()
-                .duration(80)
-                .attr("transform", function() {
-                  const currentTransform = d3.select(this).attr("transform");
-                  const scaleIndex = currentTransform.indexOf("scale");
-                  if (scaleIndex !== -1) {
-                    return currentTransform.slice(0, scaleIndex) + "scale(1)";
-                  } else {
-                    return currentTransform;
-                  }
-                });
-            }
-          });
-
-
-          let squareClicked = false;
-
-          squares.on("click", function(event, d) {
-              const clickedSquare = d3.select(this);
-              const clickedIndex = squares.nodes().indexOf(this);
-              console.log(`Clicked square index: ${clickedIndex}`);
-              // this.$refs.legend.dim();
-              
-
-              if (!clicked) {
-                // 将被点击的方格移动到左上角并放大
-                const cross = clickedSquare
-                  .append('path')
-                  // .attr('d', 'M5 5 L15 15 M15 5 L5 15')  //左上角
-                  // .attr('d', 'M85 5 L95 15 M95 5 L85 15') //右上角
-                  .attr('d', 'M157.5 -10 L162.5 -5 M162.5 -10 L157.5 -5') // 右上角，大小减半
-                  .attr('stroke', 'white')
-                  .attr('stroke-width', 1)
-                  .attr('opacity', 0)
-                  .classed('cross', true);
-
-                // 在点击 cross 时，将大方块返回到原始位置和大小，显示其他方块
-                cross.on("click", function() {
-                  
-                   // 在更新 clicked 变量之前输出它的值
-                  console.log("Before update: clicked =", clicked);
-                  // 将被点击的方格返回到原始位置和大小
-                  clickedSquare
-                    .transition()
-                    .duration(500)
-                    .attr("transform", (d, i) => {
-                      // console.log(clicked)
-                      let x = (clickedIndex % columns) * (rectWidth + totalMargin);
-                      let y = parseInt(clickedIndex / columns) * (rectWidth + totalMargin);
-                      return `translate(${x},${y}) scale(1)`;
-                    });
-
-
-                  // 显示其他方块
-                  squares.filter((d, j) => j !== clickedIndex)
-                    .transition()
-                    .duration(500)
-                    .style("opacity", 1);
-
-                  // 更新 clicked 变量的值
-                  clicked = false;
-                  squareClicked = false;
-                    // 在更新 clicked 变量之后输出它的值
-                  console.log("After update: clicked =", clicked);
-                  cross.remove();
-                      // 阻止事件冒泡
-                  // event.stopPropagation();
-                });
-                // 将大方块中的线返回到原始粗细和颜色，删除线路信息
-                squares.selectAll('line')
-                  .style("stroke", d => d.color || "white")
-                  .style("opacity","0.9")
-                  .style("stroke-width", d => {
-                        const strokeWidth = strokeWidthScale(d["归一化覆盖率"]);
-                        // console.log(`归一化覆盖率: ${d["归一化覆盖率"]}, stroke width: ${strokeWidth}`);
-                        return strokeWidth;
-                    });
-                if (currentText) {
-                  currentText.remove();
-                }
-
-                // clickedSquare.select("city-square-clip").remove();
-
-
-                clickedSquare
-                  .transition()
-                  .duration(500)
-                  .attr("transform", `translate(100,0) scale(10.5)`)
-                  .on("end", function() {
-                    // 禁用其他方格的点击事件
-                    console.log("Transition ended. Applying new clip-path.");
-                    // d3.select(this).on("click", null);
-                    // clickedSquare.selectAll("line").attr("clip-path", "url(#page-square-clip)");
-                    clickedSquare.selectAll("line").attr("clip-path", null);
-                    clickedSquare.selectAll("circle").attr("clip-path", null);
-                    // 在放大完成后显示文本
-                    // 在左上角显示城市名称
-                    // clickedSquare.append("text")
-                    //     .attr("x", 137.2)   // -3
-                    //     .attr("y", 15)
-                    //     .text(d.name)
-                    //     .style("fill", "white")
-                    //     .style("font-size", "4px")
-                    //     ;
-                  });
-
-                // 隐藏其他方块
-                squares.filter((d, j) => j !== clickedIndex)
-                  .transition()
-                  .duration(500)
-                  .style("opacity", 0.03)
-                  .on("end", function() {
-                    // 禁用其他方格的点击事件
-                    // console.log("Transition ended. Applying new clip-path.");
-                    // d3.select(this).on("click", null);
-                  });
-                squares.filter((d, j) => j !== clickedIndex)
-                  .selectAll("line")
-                  .on("click", null);
-                  
-
-                // 更新 clicked 变量的值
-                clicked = true;
-                squareClicked = true;
-
-                // console.log("final: clicked =", clicked);
-              }
-            });
-
-
-
-            }
-
-        });
-
-  
-      },
-
-
+    name: 'Square',
+    data() {
+      return {
+        svgTextLength: new SVGTextLength(),
+        hoverLock: false,
+      };
     },
-
-    watch: {
-    timeRange: {
-        handler(newVal, oldVal) {
-            // 每次timeRange更新时，重新绘制图形
-            d3.selectAll("line, circle")  
-            .style("stroke-opacity", d => {
-              if (d && '首发时间' in d) {
-                  if (newVal === null) {
-                      return 0.9;
-                  } else if (new Date(d["首发时间"]) <= new Date(newVal)) {
-                      return 0.9
-                  } else {
-                      return 0
-                  }
-              } else {
-                  // handle the case where d is undefined or '首发时间' does not exist in d
-                  // for example, you can return a default value
-                  return 0.9;
-              }
-          })
-
-                // .style("stroke-opacity", d => {
-                //     if (newVal === null) {
-                //         return 0.9;
-                //     } else if (new Date(d["首发时间"]) <= new Date(newVal)) {
-                //         return 0.9
-                //     } else {
-                //         return 0
-                //     }
-                // })
-            
+    props: {
+        datum: {
+            type: Object,
+            default: () => {},
+        },
+        width: {
+            type: Number,
+            default: 0,
+        },
+        height: {
+            type: Number,
+            default: 0,
+        },
+        textSize: {
+            type: Number,
+            default: 0,
+        },
+        transform: {
+            type: String,
+            default: "",
+        },
+        globalX: {
+            type: Number,
+            default: 0,
+        },
+        globalY: {
+            type: Number,
+            default: 0,
+        },
+        globalWidth: {
+            type: Number,
+            default: 0,
+        },
+        globalHeight: {
+            type: Number,
+            default: 0,
+        },
+        popout: {
+            type: Boolean,
+            default: false,
         },
     },
-},
+    computed: {
+        ...mapState([
+            "timeRange",
+            "duration",
+            "lineHovered",
+            "lineClicked",
+            "timelineOnDrag",
+        ]),
+        lineSelected() {
+          if (!this.popout) return null;
+          return this.lineHovered ?? this.lineClicked;
+        },
+        size() {
+          return {
+            width: this.width,
+            height: this.height,
+          };
+        },
+        realWidth() {
+          return this.popout ? this.globalWidth : this.width;
+        },
+        realHeight() {
+          return this.popout ? this.globalHeight : this.height;
+        },
+        innerSize() {
+          return Math.min(this.realWidth, this.realHeight);
+        },
+        strokeWidthScale() {
+          const size = this.innerSize;
+          return d3.scaleLinear()
+              .domain([0, 0.01, 0.05, 0.5, 1])
+              .range([size/20, size/10, size/12, size/8, size/6])
+          // 定义线条宽度的比例尺
+          // 根据“归一化覆盖率”的值定义线条的宽度。这个比例尺将覆盖率映射到一系列的宽度值。
+        },
+        radiusScale() {
+          const size = this.innerSize;
+          return d3.scaleLinear()
+              .domain([0, 0.1, 0.3, 1])
+              .range([size/4, size/3, size/2.5, size/2]);
+          // 定义圆的半径比例尺
+          // 类似于线宽比例尺，这个比例尺根据覆盖率来确定圆的半径大小。
+        },
+    },
+    methods: {
+        ...mapActions([
+           "updateCityHovered",
+           "updateCitySelected",
+           "updateLineHovered",
+           "updateLineClicked",
+        ]),
+        select(parent, class_, type) {
+          let elem = parent.select("." + class_);
+          if (elem.empty()) {
+            elem = parent.append(type)
+                .classed(class_, true);
+          }
+          return elem;
+        },
+        getExitIcon(size, color) {
+          return `
+            <svg viewBox="0 0 1024 1024" width="${size}" height="${size}">
+                <path d="M143.616 47.104l830.08 830.08c26.24 26.24 26.24 69.888 0 96.128-26.24 26.24-69.888 26.24-96.128 0L47.488 143.232c-17.536-26.24-17.536-69.888 0-96.128 26.24-26.24 69.888-26.24 96.128 0z m0 0" fill="${color}"></path>
+                <path d="M982.528 143.232L152.32 973.312c-26.24 26.24-69.888 26.24-96.128 0-26.24-26.24-26.24-69.888 0-96.128L886.4 47.104c26.24-26.24 69.888-26.24 96.128 0 17.408 26.24 17.408 69.888 0 96.128z m0 0" fill="${color}"></path>
+            </svg>
+          `;
+        },
+        draw(width, height, duration=0) {
+            if (this.innerSize === 0) return;
+            this.calculateLines(width, height);
+            this.drawLines(width, height, duration);
+            this.drawBorder(width, height, duration);
 
-  mounted() {
-    this.drawSquare()
-  }
-}
-  </script>
-  
-  <!-- Add "scoped" attribute to limit CSS to this component only -->
-  <style>
-.maintitle {
-  font-size: 2em;
-  font-weight: bold;
-  color:white;
-}
+            if (this.popout) {
+              this.hoverLock = true;
+              setTimeout(() => {
+                this.drawExitButton(width, height);
+                this.hoverLock = false;
+              }, duration);
+            }
+            else {
+              this.hoverLock = true;
+              this.drawExitButton(width, height);
+              this.updateLineHovered(null);
+              this.updateLineClicked(null);
+            }
+        },
+        /**
+         * 绘制边界，包括下方的文字
+         * @returns {void}
+         */
+        drawBorder(width, height, duration=0) {
+          const datum = this.datum;
+          const textSize = this.textSize;
+          const square = d3.select(this.$refs.unit);
+          const select = (parent, class_, type) => {
+            let elem = parent.select("." + class_);
+            if (elem.empty()) {
+              elem = parent.append(type)
+                  .classed(class_, true);
+            }
+            return elem;
+          }
 
-</style>
+          // 添加方块
+          if (this.popout) {
+            select(square, "border", "rect")
+                .remove();
+          }
+          else {
+            select(square, "border", "rect")
+                .attr('width', width) // (xScale(117) - xScale(115))*0.5
+                .attr('height', height) //  (yScale(39) - yScale(41))*0.5
+                .style('fill', 'white')
+                .style('opacity', '0')
+                .style('stroke-opacity', '0')
+                .style('stroke', 'white')
+                .style('cursor', 'pointer')
+                .on('mouseover', () => {
+                  this.updateCityHovered(datum["城市名称"]);
+                  square.transition()
+                      .duration(200)
+                      .attr("transform", `translate(${-width * 0.1}, ${-height * 0.1}) scale(1.2)`);
+                })
+                .on('mouseout', () => {
+                  this.updateCityHovered(null);
+                  square.transition()
+                      .duration(200)
+                      .attr("transform", `translate(0, 0) scale(1)`);
+                })
+                .on('click', () => {
+                  this.updateCitySelected(datum["城市名称"]);
+                });
+          }
+
+          // 添加下面的文字
+          const fontsize = this.popout ? (height * 0.04) : (textSize * 0.25);
+          const marginY = (textSize - fontsize * 2) / 3;
+          const x0 = this.popout ? this.globalX : 0;
+          const y0 = this.popout ? fontsize : (height + marginY);
+          const lineHeight = this.popout ? fontsize * 1.2 : (fontsize + marginY);
+          const cityName = select(square, "city-name", "text")
+              .attr("dominant-baseline", "hanging")
+              .attr("fill", "white")
+              .text(datum["城市名称"])
+              .style("font-family", "HelveticaNeue")
+              .style("font-weight", "bold");
+          const cityNameEn = select(square, "city-nameen", "text")
+              .attr("dominant-baseline", "hanging")
+              .attr("fill", "white")
+              .text(datum["城市英文"])
+              .style("font-family", "HelveticaNeue");
+          if (duration > 0) {
+            cityName.transition()
+                .duration(duration)
+                .attr("font-size", fontsize)
+                .attr("x", x0)
+                .attr("y", y0);
+            cityNameEn.transition()
+                .duration(duration)
+                .attr("font-size", fontsize)
+                .attr("x", x0)
+                .attr("y", y0 + lineHeight);
+          }
+          else {
+            cityName
+                .attr("font-size", fontsize)
+                .attr("x", x0)
+                .attr("y", y0);
+            cityNameEn
+                .attr("font-size", fontsize)
+                .attr("x", x0)
+                .attr("y", y0 + lineHeight);
+          }
+        },
+        /**
+         * 计算所有线路的绘制位置，并直接放在数据上
+         * @returns {void}
+         */
+        calculateLines(width, height) {
+          const datum = this.datum;
+          const size = Math.min(width, height);
+
+          // 地理位置实际中心点
+          const realCenter = new Point(
+              parseFloat(datum["经度"]),
+              parseFloat(datum["纬度"]),
+          );
+          // 绘制中心点
+          const center = new Point(
+              width * 0.5,
+              height * 0.5,
+          );
+          // 绘制矩形边框的角点（初始是正方形）
+          const corners = [
+            new Point(0, 0),
+            new Point(width, 0),
+            new Point(width, height),
+            new Point(0, height),
+          ];
+          // 绘制矩形边框的边
+          const borders = corners.map((c, i) => {
+            const next = corners[(i + 1) % corners.length];
+            return new LineSegment(c, next);
+          });
+
+          // 计算缩放比例：保证所有的线路都可以显示在矩形边界框内
+          const lines = this.datum["地铁线路"];
+          lines.forEach((line, i) => {
+            line.idx = i;
+          });
+          const r = lines.length <= 1 ? 0.1 : 0.8;
+          let lineScale = lines.reduce((acc, l) => {
+            const realStart = new Point(
+                parseFloat(l["起点站经度"]),
+                parseFloat(l["起点站纬度"]),
+            );
+            const realEnd = new Point(
+                parseFloat(l["终点站经度"]),
+                parseFloat(l["终点站纬度"]),
+            );
+            l.realStart = realStart;
+            l.realEnd = realEnd;
+
+            if (realEnd.distanceToPoint(realStart) === 0) {
+              l.isCircle = true;
+              l.legendCorner = corners[3];
+              return acc;
+            }
+
+            const realLine = Line.createFromPoints(realStart, realEnd);
+            const realDist = realCenter.distanceToLine(realLine);
+
+            // 找到在保证线路不超出矩形边界框的情况下，线路与中心距离最小的情况
+            let corner;
+            let proj = realCenter.projectionOnLine(realLine);
+            if (proj.x < realCenter.x && proj.y < realCenter.y) {
+              corner = corners[0];
+            }
+            else if (proj.x >= realCenter.x && proj.y < realCenter.y) {
+              corner = corners[1];
+            }
+            else if (proj.x >= realCenter.x && proj.y >= realCenter.y) {
+              corner = corners[2];
+            }
+            else {
+              corner = corners[3];
+            }
+            let line = Line.createParallelLineThroughPoint(realLine, corner);
+
+            l.isCircle = false;
+            l.realLine = realLine;
+            l.legendCorner = (corner === corners[0] || corner === corners[3]) ? corners[2] : corners[3];
+
+            return Math.min(acc, center.distanceToLine(line) * r / realDist);
+          }, Infinity);
+
+          if (lineScale === Infinity) {
+            lineScale = 1;
+          }
+
+          lines.forEach(d => {
+            if (d.isCircle) {
+              d.center = center;
+            }
+            else {
+              const realLine = d.realLine;
+              const realP = realCenter.projectionOnLine(realLine);
+              const p = new Point(
+                  center.x + (realP.x - realCenter.x) * lineScale,
+                  center.y + (realP.y - realCenter.y) * lineScale,
+              );
+              const line = Line.createParallelLineThroughPoint(realLine, p);
+
+              // 计算线路直线与矩形边界的交点
+              const intersectionPoints = borders
+                  .map(b => b.intersectionWithLine(line))
+                  .filter(p => p !== null);
+
+              // 把求得的线段延伸一点，不然会看出来线段端点
+              d.lineSegment = new LineSegment(...intersectionPoints)
+                  .extension(size * 0.1);
+            }
+          });
+        },
+        /**
+         * 绘制线路
+         * @returns {void}
+         */
+        drawLines(width, height, duration=0) {
+          const datum = this.datum;
+          const id = datum['城市名称'].replace(' ', '-');
+          const select = this.select;
+          const timeRange = this.timeRange;
+
+          // 添加裁剪路径
+          const clipPathId = `square-clip-path-${id}`; // 裁剪路径的唯一 ID
+          const square = d3.select(this.$refs.unit);
+          const back = d3.select(this.$refs.back);
+          const defs = select(square, "clip-path-defs", "defs") // 选择或创建 <defs> 元素
+          const clipPath = select(defs, "clip", "clipPath") // 在 <defs> 内添加 <clipPath>
+              .attr("id", clipPathId) // 设置裁剪路径的 ID
+
+          const clipPathRect = select(clipPath, "rect", "rect");
+          if (duration > 0) {
+            clipPathRect.transition()
+                .duration(duration)
+                .attr('width', width) // 设置 <rect> 的宽度
+                .attr('height', height); // 设置 <rect> 的高度
+          }
+          else {
+            clipPathRect
+                .attr('width', width)
+                .attr('height', height);
+          }
+          // 这部分代码在每个正方形中添加一个裁剪路径，用于确保在正方形内绘制的图形不会超出其边界。
+
+          // 获得比例尺
+          const strokeWidthScale = this.strokeWidthScale;
+          const radiusScale = this.radiusScale;
+
+          // 绘制路线
+          square.selectAll(".line")
+              .data(datum["地铁线路"], d => d.idx)
+              .join("g")
+              .classed("line", true)
+              .each((d, i, elements) => {
+                const g = d3.select(elements[i])
+                    .attr("id", `${id}-${d["线路"]}-${d.idx}`);
+
+                let inTimeRange;
+                if (d['首发时间'] !== undefined) {
+                  const start = new Date(d["首发时间"]);
+                  if (timeRange === null) {
+                    inTimeRange = true;
+                  } else if (timeRange[0] <= start && start <= timeRange[1]) {
+                    inTimeRange = true;
+                  } else {
+                    inTimeRange = false;
+                  }
+                } else {
+                  inTimeRange = true;
+                }
+
+                let opacity = inTimeRange ? 0.9 : 0;
+
+                if (d.isCircle) {
+                  const radius = radiusScale(d["归一化覆盖率"]);
+                  const circle = select(g, "circle-extension", "circle")
+                      // .attr('id', `${id}-${d["线路"]}-line`)
+                      .style("fill", "none")
+                      .style("stroke", d.color || "white")
+                      .style('stroke-opacity', opacity)
+                      .attr("clip-path", `url(#square-clip-path-${id})`);
+
+                  if (duration > 0) {
+                    circle.transition()
+                        .duration(duration)
+                        .attr("cx", d.center.x)
+                        .attr("cy", d.center.y)
+                        .attr("r", radius)
+                        .style("stroke-width", strokeWidthScale(d["归一化覆盖率"]));
+                  }
+                  else {
+                    circle
+                        .attr("cx", d.center.x)
+                        .attr("cy", d.center.y)
+                        .attr("r", radius)
+                        .style("stroke-width", strokeWidthScale(d["归一化覆盖率"]));
+                  }
+                }
+                else {
+                  // 计算实际绘制的线路的直线方程
+                  const lineSegment = d.lineSegment;
+                  const start = lineSegment.start.x < lineSegment.end.x ? lineSegment.start : lineSegment.end;
+                  const end = lineSegment.start.x < lineSegment.end.x ? lineSegment.end : lineSegment.start;
+
+                  // 绘制线路线段
+                  const line = select(g, "line-extension", "line")
+                      // .attr('id', `${id}-${d["线路"]}-line`)
+                      .style("stroke", d.color || "white")
+                      .style("stroke-opacity", opacity)
+                      .style("stroke-linecap", "round")
+                      .attr("clip-path", `url(#square-clip-path-${id})`);
+
+                  if (duration > 0) {
+                    line.transition()
+                        .duration(duration)
+                        .attr("x1", start.x)
+                        .attr("y1", start.y)
+                        .attr("x2", end.x)
+                        .attr("y2", end.y)
+                        .style("stroke-width", strokeWidthScale(d["归一化覆盖率"]))
+                  }
+                  else {
+                    line
+                        .attr("x1", start.x)
+                        .attr("y1", start.y)
+                        .attr("x2", end.x)
+                        .attr("y2", end.y)
+                        .style("stroke-width", strokeWidthScale(d["归一化覆盖率"]))
+                  }
+                }
+
+                if (this.popout) {
+                  g.style("cursor", inTimeRange ? "pointer" : null)
+                      .on("mouseover", () => {
+                        if (this.hoverLock || !inTimeRange || this.timelineOnDrag) return;
+                        this.updateLineHovered(d.idx);
+                      })
+                      .on("mouseout", () => {
+                        if (this.hoverLock || !inTimeRange || this.timelineOnDrag) return;
+                        this.updateLineHovered(null);
+                      })
+                      .on("click", () => {
+                        if (this.hoverLock || !inTimeRange || this.timelineOnDrag) return;
+                        this.updateLineClicked(this.lineClicked === d.idx ? null : d.idx);
+                      });
+                }
+                else {
+                  g.style("cursor", null)
+                      .on("mouseover", null)
+                      .on("mouseout", null)
+                      .on("click", null);
+                }
+              });
+        },
+        drawExitButton(width, height) {
+          const size = Math.min(width, height) * 0.03;
+          const select = this.select;
+          const g = d3.select(this.$refs.button)
+              .attr("transform", `translate(${width - size * 2.5}, ${size})`);
+
+          const exit = select(g, 'exit', 'g')
+          if (this.popout) {
+            exit.style('cursor', 'pointer')
+                .on('mouseover', () => {
+                  exit.selectAll('path')
+                      .transition()
+                      .duration(300)
+                      .attr('fill', '#aaa');
+                })
+                .on('mouseout', () => {
+                  exit.selectAll('path')
+                      .transition()
+                      .duration(300)
+                      .attr('fill', '#fff');
+                })
+                .on('click', () => {
+                  this.updateCitySelected(null);
+                });
+            select(exit, 'back', 'rect')
+                .attr('width', size)
+                .attr('height', size)
+                .attr('opacity', 0);
+            select(exit, 'exit-icon', 'g')
+                .html(this.getExitIcon(size, '#fff'));
+          }
+          else {
+            exit.remove();
+          }
+        },
+        updateTransform(duration) {
+          let transform;
+          if (this.popout) {
+            transform = `translate(${-this.globalX}, ${-this.globalY})`;
+          }
+          else {
+            transform = this.transform;
+          }
+          this.$refs.unit.setAttribute("transform", '');
+          d3.select(this.$refs.wrapper)
+              .transition()
+              .duration(duration)
+              .attr("transform", transform);
+        },
+        updateLines(width, height) {
+          const square = d3.select(this.$refs.unit);
+          const back = d3.select(this.$refs.back);
+          const lineSelected = this.lineHovered ?? this.lineClicked;
+          const dehighlightOpacity = 0.1;
+          const select = this.select;
+          const strokeWidthScale = this.strokeWidthScale;
+          const radiusScale = this.radiusScale;
+          const datum = this.datum;
+          const id = datum['城市名称'].replace(' ', '-');
+          const svgTextLength = this.svgTextLength;
+          const self = this;
+
+          if (lineSelected === null) {
+            square.selectAll(".line")
+                .style("opacity", 1);
+            select(square, "detail", "text").remove();
+            select(back, "detail-path", "path").remove();
+            select(square, "info", "text").remove();
+          }
+          else {
+            square.selectAll(".line")
+                .style("opacity", (d) => {
+                  return d.idx === lineSelected ? 1 : dehighlightOpacity;
+                })
+                .each((d) => {
+                  if (d.idx === lineSelected) {
+                    //const text = `线路名称 Line Name: ${d["线路"]}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;线路覆盖率 Line Coverage: ${d["归一化覆盖率"]}`;
+                    const text = `线路名称 Line Name: ${d["线路"]}`;
+                    const fontsize = Math.min(width, height) * 0.03;
+                    const infoFontsize = Math.min(width, height) * 0.016;
+                    const length = svgTextLength.visualWidth(text, fontsize);
+                    const totalLength = d.isCircle ? length : d.lineSegment.length();
+                    const dy = d.isCircle ? -fontsize * 0.5 : (-fontsize * 0.5 - strokeWidthScale(d["归一化覆盖率"]) * 0.5);
+                    let path = select(back, "detail-path", "path")
+                        .attr('opacity', 0)
+                        .attr('id', `${id}-${d.idx}-line`);
+                    if (d.isCircle) {
+                      const radius = radiusScale(d["归一化覆盖率"]) + strokeWidthScale(d["归一化覆盖率"]) * 0.5;
+                      const center = d.center;
+                      const dR = length * 0.5 / radius;
+                      const dx = radius * Math.sin(dR);
+                      const dy = radius * Math.cos(dR);
+                      const x0 = center.x - dx;
+                      const y0 = center.y - dy;
+                      const x1 = center.x + dx;
+                      const y1 = center.y + dy;
+                      path.attr('d', `M${x0} ${y0} A${radius} ${radius} 0 0 1 ${x1} ${y1} A${radius} ${radius} 0 0 1 ${x0} ${y0}`);
+                    }
+                    else {
+                      const start = d.lineSegment.start.x < d.lineSegment.end.x ? d.lineSegment.start : d.lineSegment.end;
+                      const end = d.lineSegment.start.x < d.lineSegment.end.x ? d.lineSegment.end : d.lineSegment.start;
+                      path.attr('d', `M${start.x} ${start.y} L${end.x} ${end.y}`);
+                    }
+                    const textElement = select(square, "detail", "text")
+                        .attr("font-size", fontsize)
+                        .attr("dy", dy)
+                        .attr("fill", "#fff");
+                    select(textElement, "detail-path", "textPath")
+                        .attr("xlink:href", `#${id}-${lineSelected}-line`)
+                        .attr("startOffset", (totalLength - length) / 2)
+                        .html(text)
+                        .style("font-family", "HelveticaNeue");
+
+                    const list = ["线路", "首发时间", "延长线时间", "起点站", "终点站", "车站数", "长度（千米）", "车型编组", "行驶时间（分钟）", "换乘站数目", "峰值车速", "配车数量"];
+                    const info = {};
+                    for (let k of list) {
+                      info[k] = d[k];
+                    }
+                    const texts = JSON.stringify(info, null, 4)
+                        .split('\n')
+                        .map(t => t.replaceAll(' ', '&nbsp;'));
+                    const textWidth = Math.max(...texts.map(t => svgTextLength.visualWidth(t, infoFontsize))) + infoFontsize * 2;
+                    const textHeight = texts.length * infoFontsize * 1.2 + infoFontsize * 2;
+                    const textX = d.legendCorner.x === 0 ? infoFontsize * 2 : d.legendCorner.x - textWidth;
+                    const textY = d.legendCorner.y - textHeight;
+
+                    select(square, "info", "text")
+                        .selectAll("tspan")
+                        .data(texts)
+                        .join("tspan")
+                        .attr("x", textX)
+                        .attr("y", (d, i) => textY + infoFontsize * i * 1.2)
+                        .attr("font-size", infoFontsize)
+                        .attr("dominant-baseline", "hanging")
+                        .attr("fill", "#fff")
+                        .html(d => d)
+                        .style("font-family", "HelveticaNeue");
+                  }
+                })
+          }
+        },
+    },
+    mounted() {
+        this.draw(this.realWidth, this.realHeight);
+    },
+    watch: {
+        size: {
+            handler() {
+                this.draw(this.realWidth, this.realHeight);
+                this.updateTransform(0);
+            }
+        },
+        timeRange: {
+            handler() {
+              this.drawLines(this.realWidth, this.realHeight);
+            },
+        },
+        popout: {
+            handler() {
+              this.draw(this.realWidth, this.realHeight, this.duration);
+              this.updateTransform(this.duration);
+            },
+        },
+        lineSelected() {
+          setTimeout(() => {
+            this.updateLines(this.realWidth, this.realHeight);
+          }, 0);
+        },
+    }
+}
+</script>

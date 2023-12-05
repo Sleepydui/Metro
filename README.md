@@ -1,4 +1,4 @@
-# metrovue
+# metrov2
 
 ## Project setup
 ```
