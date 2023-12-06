@@ -57,6 +57,12 @@
 import { Search } from '@element-plus/icons-vue';
 import { mapState, mapActions } from 'vuex';
 const legend = require('@/assets/legend.svg'); // 957.2 x 71.13
+const legendone = require('@/assets/legendone.svg'); //330 x 103
+const legendtwo = require('@/assets/legendtwo.svg'); //111 x 103
+const legendthree = require('@/assets/legendthree.svg'); //173 x 104
+const legendfour = require('@/assets/legendfour.svg'); //178 x104
+const legendfive = require('@/assets/legendfive.svg'); //171 x 101
+
 export default {
     name: 'Title',
     data() {
