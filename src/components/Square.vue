@@ -98,16 +98,18 @@ export default {
         strokeWidthScale() {
           const size = this.innerSize;
           return d3.scaleLinear()
-              .domain([0, 0.01, 0.05, 0.5, 1])
-              .range([size/20, size/10, size/12, size/8, size/6])
+              // .domain([0, 0.001,0.005, 0.05, 0.3, 0.7,1])
+              // .range([size/40,size/35,size/15, size/10, size/4,size/2, size/1.5])
+              .domain([0,0.0002,0.005,0.05,0.5, 1]) 
+              .range([size/65,size/45,size/20,size/4, size/8*3, size/3]); 
           // 定义线条宽度的比例尺
           // 根据“归一化覆盖率”的值定义线条的宽度。这个比例尺将覆盖率映射到一系列的宽度值。
         },
         radiusScale() {
           const size = this.innerSize;
           return d3.scaleLinear()
-              .domain([0, 0.1, 0.3, 1])
-              .range([size/4, size/3, size/2.5, size/2]);
+              .domain([0,  0.3, 1])
+              .range([size/4, size/3, size/2.5]);
           // 定义圆的半径比例尺
           // 类似于线宽比例尺，这个比例尺根据覆盖率来确定圆的半径大小。
         },
@@ -204,7 +206,7 @@ export default {
           }
 
           // 添加下面的文字
-          const fontsize = this.popout ? (height * 0.04) : (textSize * 0.25);
+          const fontsize = this.popout ? (height * 0.04) : (textSize * 0.2);
           const marginY = (textSize - fontsize * 2) / 3;
           const x0 = this.popout ? this.globalX : 0;
           const y0 = this.popout ? fontsize : (height + marginY);
@@ -240,7 +242,7 @@ export default {
             cityNameEn
                 .attr("font-size", fontsize)
                 .attr("x", x0)
-                .attr("y", y0 + lineHeight);
+                .attr("y", y0 + lineHeight/1.8);
           }
         },
         /**
@@ -412,7 +414,7 @@ export default {
                   inTimeRange = true;
                 }
 
-                let opacity = inTimeRange ? 0.9 : 0;
+                let opacity = inTimeRange ? 0.95 : 0;
 
                 if (d.isCircle) {
                   const radius = radiusScale(d["归一化覆盖率"]);
