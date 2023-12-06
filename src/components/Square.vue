@@ -113,6 +113,9 @@ export default {
           // 定义圆的半径比例尺
           // 类似于线宽比例尺，这个比例尺根据覆盖率来确定圆的半径大小。
         },
+        isBlackClicked() {
+          return this.$store.state.isBlackClicked;
+        },
     },
     methods: {
         ...mapActions([
@@ -421,8 +424,8 @@ export default {
                   const circle = select(g, "circle-extension", "circle")
                       // .attr('id', `${id}-${d["线路"]}-line`)
                       .style("fill", "none")
-                      .style("stroke", d.color || "white")
-                      .style('stroke-opacity', opacity)
+                      .style("stroke", this.isBlackClicked ? "white" : d.color || "white")
+                      .style("stroke-opacity", this.isBlackClicked ? 0.85 : opacity)
                       .attr("clip-path", `url(#square-clip-path-${id})`);
 
                   if (duration > 0) {
@@ -450,8 +453,8 @@ export default {
                   // 绘制线路线段
                   const line = select(g, "line-extension", "line")
                       // .attr('id', `${id}-${d["线路"]}-line`)
-                      .style("stroke", d.color || "white")
-                      .style("stroke-opacity", opacity)
+                      .style("stroke", this.isBlackClicked ? "white" : d.color || "white")
+                      .style("stroke-opacity", this.isBlackClicked ? 0.85 : opacity)
                       .style("stroke-linecap", "round")
                       .attr("clip-path", `url(#square-clip-path-${id})`);
 
@@ -664,6 +667,12 @@ export default {
           setTimeout(() => {
             this.updateLines(this.realWidth, this.realHeight);
           }, 0);
+        },
+        isBlackClicked: {
+          handler() {
+            this.drawLines(this.realWidth, this.realHeight);
+          },
+          immediate: true,
         },
     }
 }

@@ -15,7 +15,7 @@
         >全球地铁线路发展历史</text>
         <foreignObject
             :y="searchY"
-            :width="searchWidth"
+            :width="searchWidth  + buttonWidth + marginSearchButton"
             :height="searchHeight"
         >
             <el-autocomplete
@@ -34,6 +34,7 @@
                     <div>{{ item }}</div>
                 </template>
             </el-autocomplete>
+            <button class="button" :style="{ width: buttonWidth + 'px', height: searchHeight + 'px' }" @click="toggleLineColor">Line Color</button>
         </foreignObject>
 
         <text class="subtitle" 
@@ -109,6 +110,7 @@ export default {
             legendfour: legendfour,
             legendfive: legendfive,
             searchText: "",
+            isButtonClicked: false, 
         }
     },
     components: {
@@ -212,6 +214,12 @@ export default {
         searchWidth() {
             return this.totalWidth * 344 / 1920;
         },
+        buttonWidth(){
+            return this.totalWidth * 100 / 1920;
+        },
+        marginSearchButton(){
+            return this.totalWidth * 20 / 1920;
+        }
     },
     methods: {
         ...mapActions([
@@ -226,6 +234,9 @@ export default {
         select(country) {
             this.searchText = country;
             this.updateCountrySelected(country);
+        },
+        toggleLineColor() {
+            this.$store.dispatch('updateIsBlackClicked', !this.$store.state.isBlackClicked);
         },
     },
     watch: {
@@ -245,5 +256,21 @@ export default {
 }
 .el-input .el-input__wrapper {
     background-color: #000;
+}
+</style>
+<style scoped>
+.button {
+    position: absolute;
+    right: 0;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    background-color: black;
+    color: rgba(255, 255, 255, 0.9);
+    border-radius: 2px;
+    outline: none;
+}
+
+.button:active {
+    border-color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.5);
 }
 </style>
