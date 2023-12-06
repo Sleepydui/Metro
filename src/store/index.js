@@ -12,6 +12,7 @@ const store = createStore({
     lineHovered: null, // 鼠标悬浮的线路
     lineClicked: null,  // 选中的线路
     timelineOnDrag: false, // 是否在拖拽时间轴
+    isBlackClicked: false, // 白or彩切换
     //全局的状态变量
   },
   getters: {
@@ -50,6 +51,9 @@ const store = createStore({
     updateTimelineOnDrag(state, payload) {
       state.timelineOnDrag = payload;
     },
+    updateIsBlackClicked(state, payload) {
+      state.isBlackClicked = payload;
+    },
   },
   actions: { //允许异步操作
     updateData({ commit }, payload) {
@@ -75,6 +79,9 @@ const store = createStore({
     },
     updateTimelineOnDrag({ commit }, payload) {
       commit('updateTimelineOnDrag', payload);
+    },
+    updateIsBlackClicked({ commit }, payload) {
+      commit('updateIsBlackClicked', payload);
     },
   },
   modules: {
