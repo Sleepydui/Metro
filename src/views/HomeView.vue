@@ -104,7 +104,7 @@ export default {
       return this.lineHovered ?? this.lineClicked;
     },
     paddingX() {
-      return this.width * 50 / 1080;
+      return this.width * 45 / 1080;
     },
     paddingY() {
       return this.height * 54 / 1080;

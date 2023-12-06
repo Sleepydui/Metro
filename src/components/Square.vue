@@ -351,7 +351,7 @@ export default {
 
               // 把求得的线段延伸一点，不然会看出来线段端点
               d.lineSegment = new LineSegment(...intersectionPoints)
-                  .extension(size * 0.1);
+                  .extension(size * 0.5);
             }
           });
         },

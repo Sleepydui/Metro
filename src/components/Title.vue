@@ -43,7 +43,7 @@
             font-family="HelveticaNeue"
             font-weight="bold"
             style="fill: white;"
-        >Evolution of Urban Metro Lines Across the Globe</text>
+        >Global Cities Subway Route Maps</text>
         
         <!-- <image 
             :x="legendX"
@@ -91,10 +91,11 @@
 </template>
 <script>
 import { Search } from '@element-plus/icons-vue';
+import { reactive } from 'vue';
 import { mapState, mapActions } from 'vuex';
 const legendone = require('@/assets/legendone.svg'); //330 x 103
 const legendtwo = require('@/assets/legendtwo.svg'); //111 x 103
-const legendthree = require('@/assets/legendthree.svg'); //173 x 104
+const legendthree = require('@/assets/legendthree.svg'); //172 x 103
 const legendfour = require('@/assets/legendfour.svg'); //178 x104
 const legendfive = require('@/assets/legendfive.svg'); //171 x 101
 
@@ -111,8 +112,9 @@ export default {
         }
     },
     components: {
-        Search,
-    },
+    Search,
+    reactive
+},
     props: {
         width: {
             type: Number,
@@ -152,7 +154,7 @@ export default {
         },
 
         legendX1() {
-            return this.totalWidth * 656 / 1920;
+            return this.totalWidth * 600 / 1920;
         },
         legendHeight1() {
             return this.totalHeight * 103 / 1080;
@@ -162,7 +164,7 @@ export default {
         },
 
         legendX2() {
-            return this.totalWidth * 1052 / 1920;
+            return this.totalWidth * 996 / 1920;
         },
         legendHeight2() {
             return this.totalHeight * 103 / 1080;
@@ -172,17 +174,17 @@ export default {
         },
 
         legendX3() {
-            return this.totalWidth * 1250 / 1920;
+            return this.totalWidth * 1194 / 1920;
         },
         legendHeight3() {
-            return this.totalHeight * 104 / 1080;
+            return this.totalHeight * 103 / 1080;
         },
         legendWidth3() {
-            return this.totalWidth * 173 / 1920;
+            return this.totalWidth * 172 / 1920;
         },
 
         legendX4() {
-            return this.totalWidth * 1448 / 1920;
+            return this.totalWidth * 1392 / 1920;
         },  
         legendHeight4() {
             return this.totalHeight * 104 / 1080;
@@ -192,7 +194,7 @@ export default {
         },
 
         legendX5() {
-            return this.totalWidth * 1645 / 1920;
+            return this.totalWidth * 1589 / 1920;
         },
         legendHeight5() {
             return this.totalHeight * 101 / 1080;
