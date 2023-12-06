@@ -1,7 +1,7 @@
 <template>
     <g class='squares'>
         <Square
-            v-for="(city, i) in cities"
+            v-for="(city, i) in sortedCities"
             :key="city['城市名称']"
             :datum="city"
             :width="squareSize"
@@ -76,6 +76,22 @@ export default {
     ...mapGetters([
         'cities',
     ]),
+    sortedCities() {
+        // 假设 getCities 是一个 getter，它返回一个包含所有城市的数组
+        let cities = this.cities;
+
+        // 对城市数组进行排序
+        cities.sort((a, b) => {
+            // 假设我们要根据 'loc_num' 进行排序
+            // 如果 'loc_num' 是空的，我们将它们视为0
+            const locNumA = a['loc_num'] || 0;
+            const locNumB = b['loc_num'] || 0;
+
+            return locNumA - locNumB;
+        });
+
+        return cities;
+    },
     size() {
         return {
             width: this.width,
@@ -93,11 +109,16 @@ export default {
         const height = this.height;
         const textMarginRate = 0.2;
         const marginRate = 0.1;
-        let columns = Math.ceil(Math.sqrt(this.data.length * width * (1 + textMarginRate) / height));
-        let rows = Math.ceil(this.data.length / columns);
-        const size = Math.min(width / columns, height / rows / (1 + textMarginRate)) * (1 - marginRate);
-        const marginX = (width - columns * size) / (columns - 1);
+        // let columns = Math.ceil(Math.sqrt(this.data.length * width * (1 + textMarginRate) / height));
+        // let rows = Math.ceil(this.data.length / columns);
+        let columns = 26
+        let rows = 9
+        // const size = Math.min(width / columns, height / rows / (1 + textMarginRate)) * (1 - marginRate);
+        const size = width * 0.031;
+        // const marginX = (width - columns * size) / (columns - 1);
         const marginY = (height - rows * size) / rows;
+        const marginX = width * 0.0078125;
+        // const marginY = height * 0.02962963;
 
         this.rows = rows;
         this.columns = columns;
