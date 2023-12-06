@@ -17,6 +17,8 @@
       :transform='`translate(${paddingX}, ${paddingY})`'
       :width="innerWidth"
       :height="titleHeight"
+      :totalHeight="height"
+      :totalWidth="width"
     ></Title>
 
     <template v-if="data !== null"> <!-- template实际上不会渲染到页面上，这里的作用主要是把两个部分组合起来适用v-if-->
@@ -102,16 +104,16 @@ export default {
       return this.lineHovered ?? this.lineClicked;
     },
     paddingX() {
-      return this.width * 0.015;
+      return this.width * 50 / 1080;
     },
     paddingY() {
-      return this.height * 0.015;
+      return this.height * 54 / 1080;
     },
     titleHeight() {
-      return this.height * 0.1;
+      return this.height * 146 / 1080;
     },
     timelineHeight() {
-      return this.height * 0.07;
+      return this.height * 54 / 1080;
     },
     squaresHeight() {
       return this.height - this.paddingY * 2 - this.titleHeight - this.timelineHeight;

@@ -550,7 +550,7 @@ export default {
           const square = d3.select(this.$refs.unit);
           const back = d3.select(this.$refs.back);
           const lineSelected = this.lineHovered ?? this.lineClicked;
-          const dehighlightOpacity = 0.1;
+          const dehighlightOpacity = 0.5;
           const select = this.select;
           const strokeWidthScale = this.strokeWidthScale;
           const radiusScale = this.radiusScale;
