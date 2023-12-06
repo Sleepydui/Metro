@@ -3,7 +3,7 @@
     <defs>
       <filter id="Gaussian_Blur">
         <feGaussianBlur in="SourceGraphic">
-          <animate attributeName="stdDeviation" values="0;0.5;3;5" :dur="`${duration/1000}s`" calcMode="paced" fill="freeze" />
+          <animate attributeName="stdDeviation" values="0;0.5;2;4" :dur="`${duration/1000}s`" calcMode="paced" fill="freeze" />
         </feGaussianBlur>
       </filter>
       <filter id="Initial_Blur">
@@ -52,11 +52,12 @@
     </foreignObject>
 
     <rect id="mask" v-if="citySelected !== null"
-      :x="paddingX"
-      :y="paddingY"
-      :width="innerWidth"
-      :height="innerHeight"
-      opacity="0"
+      :x=0
+      :y=0
+      :width="innerWidth*2"
+      :height="innerHeight*2"
+      fill="black"
+      opacity="0.8"
     ></rect>
     <g id="singleCity"
        :transform='`translate(${paddingX}, ${paddingY + titleHeight + timelineHeight})`'
