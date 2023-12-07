@@ -425,7 +425,7 @@ export default {
                       // .attr('id', `${id}-${d["线路"]}-line`)
                       .style("fill", "none")
                       .style("stroke", this.isBlackClicked ? "white" : d.color || "white")
-                      .style("stroke-opacity", this.isBlackClicked ? 0.85 : opacity)
+                      .style("stroke-opacity", opacity === 0 ? 0 : (this.isBlackClicked ? 0.85 : opacity))
                       .attr("clip-path", `url(#square-clip-path-${id})`);
 
                   if (duration > 0) {
@@ -454,7 +454,7 @@ export default {
                   const line = select(g, "line-extension", "line")
                       // .attr('id', `${id}-${d["线路"]}-line`)
                       .style("stroke", this.isBlackClicked ? "white" : d.color || "white")
-                      .style("stroke-opacity", this.isBlackClicked ? 0.85 : opacity)
+                      .style("stroke-opacity", opacity === 0 ? 0 : (this.isBlackClicked ? 0.85 : opacity))
                       .style("stroke-linecap", "round")
                       .attr("clip-path", `url(#square-clip-path-${id})`);
 
