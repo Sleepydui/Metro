@@ -117,15 +117,16 @@ export default {
                 title = d3.select(this.$el)
                     .append('text')  // 创建文本元素
                     .classed('title', true)
-                    .attr('x', this.totalWidth * 102 / 1920)  
-                    .attr('y', this.totalHeight * (-26) / 1080)  // 在时间轴上方适当的位置
                     .attr('text-anchor', 'middle')  // 确保文本居中对齐
-                    .style('font-size', `${this.totalHeight * 11 / 1080}px`)  // 设置字体大小
-                    .style('fill', 'white')  // 设置字体颜色
-                    .style('font-weight', 'bold')  // 设置字体粗细
-                    .attr('font-family', 'SourceHanSansCN')  // 设置字体
-                    .text('修建时间（年）Construction Time (Years)');  // 设置标题文本
             }
+
+            title.style('font-size', `${this.totalHeight * 11 / 1080}px`)  // 设置字体大小
+                .attr('x', this.totalWidth * 102 / 1920)  
+                .attr('y', this.totalHeight * (-26) / 1080)  // 在时间轴上方适当的位置
+                .style('fill', 'white')  // 设置字体颜色
+                .style('font-weight', 'bold')  // 设置字体粗细
+                .attr('font-family', 'SourceHanSansCN')  // 设置字体
+                .text('修建时间（年）Construction Time (Years)');  // 设置标题文本
 
             // 定义圆形滑块
             let slider = d3.select(this.$el).selectAll('.slider')
@@ -133,7 +134,7 @@ export default {
                 slider = d3.select(this.$el)
                     .append('circle')
                     .classed('slider', true)
-                    .attr('r', `${this.totalHeight * 7 / 1080}px`)
+                    .attr('r', 6)
                     .attr('cy', 1)
                     .style('fill', 'black')
                     .style('stroke', 'white')

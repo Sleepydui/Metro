@@ -69,6 +69,7 @@
         :width="innerWidth"
         :height="timelineHeight * 0.5"
         :paddingX="paddingX"
+        :opacity="0.7"
     />
   </svg>
 </template>

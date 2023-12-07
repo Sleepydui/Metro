@@ -218,7 +218,7 @@ export default {
               .attr("dominant-baseline", "hanging")
               .attr("fill", "white")
               .text(datum["城市名称"])
-              .style("font-family", "HelveticaNeue")
+              .style("font-family", "SourceHanSansCN")
               .style("font-weight", "bold");
           const cityNameEn = select(square, "city-nameen", "text")
               .attr("dominant-baseline", "hanging")
@@ -529,7 +529,8 @@ export default {
                 .attr('height', size)
                 .attr('opacity', 0);
             select(exit, 'exit-icon', 'g')
-                .html(this.getExitIcon(size, '#fff'));
+                .html(this.getExitIcon(size, '#fff'))
+                .style('opacity', 0.8);
           }
           else {
             exit.remove();
