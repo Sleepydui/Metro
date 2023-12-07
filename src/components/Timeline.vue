@@ -81,10 +81,11 @@ export default {
 
             // 定义轴
             const xAxis = d3.axisBottom(xScale)
-                .tickFormat(d3.timeFormat("%Y"))
-                .tickValues([xScale.domain()[0]].concat(
-                    d3.timeYear.every(10).range(...xScale.domain())
-                ).concat(xScale.domain()[1])) 
+                .tickFormat(d => (d.getFullYear() % 20 === 0) ? d3.timeFormat("%Y")(d) : "")  // 每20年显示一次文本
+                .tickValues(d3.timeYear.every(2).range(maintimeRange[0], maintimeRange[1]))  // 每2年一个刻度
+                .tickSize(-3)  // 设置刻度大小，使其朝向上方
+                .tickSizeInner(-3)  // 确保内部刻度线朝向上方
+                .tickPadding(-15);  // 设置刻度与轴标签之间的间距
                 // .tickValues(xScale.domain()) 
 
             // 绘制轴
