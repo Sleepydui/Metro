@@ -28,6 +28,8 @@
         :width="innerWidth"
         :height="timelineHeight * 0.5"
         :paddingX="paddingX"
+        :totalHeight="height"
+        :totalWidth="width"
       />
 
       <Squares

@@ -28,6 +28,14 @@ export default {
         type: Number,
         default: 0,
       },
+      totalWidth: {
+        type: Number,
+        default: 0,
+      },
+      totalHeight: {
+        type: Number,
+        default: 0,
+      },
     },
     data() {
       return {
@@ -85,8 +93,7 @@ export default {
                 .tickValues(d3.timeYear.every(2).range(maintimeRange[0], maintimeRange[1]))  // 每2年一个刻度
                 .tickSize(-3)  // 设置刻度大小，使其朝向上方
                 .tickSizeInner(-3)  // 确保内部刻度线朝向上方
-                .tickPadding(-15);  // 设置刻度与轴标签之间的间距
-                // .tickValues(xScale.domain()) 
+                .tickPadding(-15)  // 设置刻度与轴标签之间的间距
 
             // 绘制轴
             let axisGroup = d3.select(this.$el).selectAll('.axis')
@@ -99,13 +106,34 @@ export default {
             axisGroup.html("");
             axisGroup.call(xAxis);
 
+            axisGroup.selectAll(".tick text")
+              .style("font-size", `${this.totalHeight * 11 / 1080}px`)
+              .style("font-family", "SourceHanSansCN")
+              .style("font-weight", "bold");
+
+            // 添加标题
+            let title = d3.select(this.$el).selectAll('.title')
+            if (title.node() === null) {
+                title = d3.select(this.$el)
+                    .append('text')  // 创建文本元素
+                    .classed('title', true)
+                    .attr('x', this.totalWidth * 102 / 1920)  
+                    .attr('y', this.totalHeight * (-26) / 1080)  // 在时间轴上方适当的位置
+                    .attr('text-anchor', 'middle')  // 确保文本居中对齐
+                    .style('font-size', `${this.totalHeight * 11 / 1080}px`)  // 设置字体大小
+                    .style('fill', 'white')  // 设置字体颜色
+                    .style('font-weight', 'bold')  // 设置字体粗细
+                    .attr('font-family', 'SourceHanSansCN')  // 设置字体
+                    .text('修建时间（年）Construction Time (Years)');  // 设置标题文本
+            }
+
             // 定义圆形滑块
             let slider = d3.select(this.$el).selectAll('.slider')
             if (slider.node() === null) {
                 slider = d3.select(this.$el)
                     .append('circle')
                     .classed('slider', true)
-                    .attr('r', 7)
+                    .attr('r', `${this.totalHeight * 7 / 1080}px`)
                     .attr('cy', 1)
                     .style('fill', 'black')
                     .style('stroke', 'white')
