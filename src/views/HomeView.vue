@@ -68,6 +68,8 @@
         :transform='`translate(${paddingX}, ${paddingY + titleHeight + timelineHeight * 0.5})`'
         :width="innerWidth"
         :height="timelineHeight * 0.5"
+        :totalHeight="height"
+        :totalWidth="width"
         :paddingX="paddingX"
         :opacity="0.7"
     />
