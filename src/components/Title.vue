@@ -34,7 +34,17 @@
                     <div>{{ item }}</div>
                 </template>
             </el-autocomplete>
-            <button class="button" :style="{ width: buttonWidth + 'px', height: searchHeight + 'px' }" @click="toggleLineColor">Line Color</button>
+            <!-- <button class="button" :style="{ width: buttonWidth + 'px', height: searchHeight + 'px' }" @click="toggleLineColor">Line Color</button> -->
+            <el-button
+                class="el-button"
+                @click="toggleLineColor"
+                :style="{width: buttonWidth + 'px', height: searchHeight + 'px', marginLeft: marginSearchButton + 'px'}"
+            >
+                Color
+            </el-button>
+
+
+
         </foreignObject>
 
         <text class="subtitle" 
@@ -94,6 +104,7 @@
 import { Search } from '@element-plus/icons-vue';
 import { reactive } from 'vue';
 import { mapState, mapActions } from 'vuex';
+import { ElButton } from 'element-plus';
 const legendone = require('@/assets/legendone.svg'); //330 x 103
 const legendtwo = require('@/assets/legendtwo.svg'); //111 x 103
 const legendthree = require('@/assets/legendthree.svg'); //172 x 103
@@ -115,6 +126,7 @@ export default {
     },
     components: {
     Search,
+    ElButton,
     reactive
 },
     props: {
@@ -257,20 +269,16 @@ export default {
 .el-input .el-input__wrapper {
     background-color: #000;
 }
-</style>
-<style scoped>
-.button {
-    position: absolute;
-    right: 0;
-    border: 1px solid rgba(255, 255, 255, 0.7);
-    background-color: black;
-    color: rgba(255, 255, 255, 0.9);
-    border-radius: 2px;
-    outline: none;
+.el-button {
+    height: v-bind(searchHeight - 2 + 'px') !important;
+    background-color: #000 !important;
+    border: 1px solid rgba(255, 255, 255, 0.9) !important;
+    color: rgba(255, 255, 255, 0.7) !important;
 }
 
-.button:active {
-    border-color: rgba(255, 255, 255, 0.5);
-    color: rgba(255, 255, 255, 0.5);
+.el-button:active {
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    color: rgba(255, 255, 255, 0.5) !important;
 }
+
 </style>
