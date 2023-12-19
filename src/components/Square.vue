@@ -14,6 +14,7 @@
 
 <script>
 import * as d3 from 'd3';
+import { geoMercator } from 'd3-geo';
 import {Line, LineSegment, Point} from "@/requirements/geometry";
 import SVGTextLength from "@/requirements/SVGTextLength";
 import {mapActions, mapState} from "vuex";
@@ -108,8 +109,8 @@ export default {
         radiusScale() {
           const size = this.innerSize;
           return d3.scaleLinear()
-              .domain([0,  0.3, 1])
-              .range([size/4, size/3, size/2.5]);
+              .domain([0,0.001,0.005,0.05,  0.3, 1])
+              .range([size/10,size/8,size/4,size/3, size/2.5, size/2]);
           // 定义圆的半径比例尺
           // 类似于线宽比例尺，这个比例尺根据覆盖率来确定圆的半径大小。
         },
@@ -252,56 +253,70 @@ export default {
          * 计算所有线路的绘制位置，并直接放在数据上
          * @returns {void}
          */
-        calculateLines(width, height) {
-          const datum = this.datum;
-          const size = Math.min(width, height);
+         calculateLines(width, height) {
+            const datum = this.datum;
+            const size = Math.min(width, height);
 
-          // 地理位置实际中心点
-          const realCenter = new Point(
-              parseFloat(datum["经度"]),
-              parseFloat(datum["纬度"]),
-          );
-          // 绘制中心点
-          const center = new Point(
-              width * 0.5,
-              height * 0.5,
-          );
-          // 绘制矩形边框的角点（初始是正方形）
-          const corners = [
-            new Point(0, 0),
-            new Point(width, 0),
-            new Point(width, height),
-            new Point(0, height),
-          ];
-          // 绘制矩形边框的边
-          const borders = corners.map((c, i) => {
-            const next = corners[(i + 1) % corners.length];
-            return new LineSegment(c, next);
-          });
-
-          // 计算缩放比例：保证所有的线路都可以显示在矩形边界框内
-          const lines = this.datum["地铁线路"];
-          lines.forEach((line, i) => {
-            line.idx = i;
-          });
-          const r = lines.length <= 1 ? 0.1 : 0.8;
-          let lineScale = lines.reduce((acc, l) => {
-            const realStart = new Point(
-                parseFloat(l["起点站经度"]),
-                parseFloat(l["起点站纬度"]),
+            // 地理位置实际中心点
+            const realCenter = new Point(
+                parseFloat(datum["经度"]),
+                parseFloat(datum["纬度"]),
             );
-            const realEnd = new Point(
-                parseFloat(l["终点站经度"]),
-                parseFloat(l["终点站纬度"]),
+            // 绘制中心点
+            const center = new Point(
+                width * 0.5,
+                height * 0.5,
             );
-            l.realStart = realStart;
-            l.realEnd = realEnd;
+            // 绘制矩形边框的角点（初始是正方形）
+            const corners = [
+              new Point(0, 0),
+              new Point(width, 0),
+              new Point(width, height),
+              new Point(0, height),
+            ];
+            // 绘制矩形边框的边
+            const borders = corners.map((c, i) => {
+              const next = corners[(i + 1) % corners.length];
+              return new LineSegment(c, next);
+            });
 
-            if (realEnd.distanceToPoint(realStart) === 0) {
-              l.isCircle = true;
-              l.legendCorner = corners[3];
-              return acc;
-            }
+            // 计算缩放比例：保证所有的线路都可以显示在矩形边界框内
+            const lines = this.datum["地铁线路"];
+            lines.forEach((line, i) => {
+              line.idx = i;
+            });
+            const r = lines.length <= 1 ? 0.1 : 0.8;
+
+            // 对线路进行排序，使得半径较小的线路后绘制
+            lines.sort((a, b) => {
+              const radiusA = a["归一化覆盖率"];
+              const radiusB = b["归一化覆盖率"];
+              return radiusB - radiusA;
+            });
+
+            // 计算一个初始的 lineScale
+            let initialLineScale = 4000;
+
+            // 创建一个投影
+            const projection = d3.geoMercator()
+                .center([parseFloat(datum["经度"]), parseFloat(datum["纬度"])]) // 设置中心为地图的中心
+                .scale(initialLineScale * size) // 使用 lineScale 设置比例尺
+                .translate([width / 2, height / 2]); // 设置平移，使得地图居中
+
+            // 使用 projection 更新 lineScale
+            let lineScale = lines.reduce((acc, l) => {
+              const realStartCoordinates = projection([parseFloat(l["起点站经度"]), parseFloat(l["起点站纬度"])]);
+              const realEndCoordinates = projection([parseFloat(l["终点站经度"]), parseFloat(l["终点站纬度"])]);
+              const realStart = new Point(realStartCoordinates[0], realStartCoordinates[1]);
+              const realEnd = new Point(realEndCoordinates[0], realEndCoordinates[1]);
+              l.realStart = realStart;
+              l.realEnd = realEnd;
+
+              if (realEnd.distanceToPoint(realStart) === 0) {
+                l.isCircle = true;
+                l.legendCorner = corners[3];
+                return acc;
+              }
 
             const realLine = Line.createFromPoints(realStart, realEnd);
             const realDist = realCenter.distanceToLine(realLine);
@@ -358,6 +373,7 @@ export default {
             }
           });
         },
+
         /**
          * 绘制线路
          * @returns {void}
