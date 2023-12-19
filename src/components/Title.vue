@@ -269,6 +269,29 @@ export default {
 .el-input .el-input__wrapper {
     background-color: #000;
 }
+/*
+.el-input__inner:focus {
+    outline: none !important;  
+    border-color: rgba(255, 255, 255, 0.8) !important;  
+}
+*/
+.el-scrollbar__wrap {
+    background-color: #000 !important;
+    border: 0 !important;  /* 设置边框宽度为 0 */
+    margin: 0 !important;  /* 设置边距为 0 */
+    padding: 0 !important;  /* 设置填充为 0 */
+}
+
+.el-scrollbar__view li {
+    color: rgba(255, 255, 255, 0.8) !important;
+    border: 0.5px solid rgba(255, 255, 255, 0.5) !important;
+}
+.el-scrollbar__view li:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: #fff !important;
+}
+
+
 .el-button {
     height: v-bind(searchHeight - 2 + 'px') !important;
     background-color: #000 !important;
