@@ -409,6 +409,7 @@ export default {
           // 获得比例尺
           const strokeWidthScale = this.strokeWidthScale;
           const radiusScale = this.radiusScale;
+          const svgTextLength = this.svgTextLength;
 
           // 绘制路线
           square.selectAll(".line")
@@ -434,6 +435,7 @@ export default {
                 }
 
                 let opacity = inTimeRange ? 0.95 : 0;
+                
 
                 if (d.isCircle) {
                   const radius = radiusScale(d["归一化覆盖率"]);
@@ -491,6 +493,8 @@ export default {
                         .attr("y2", end.y)
                         .style("stroke-width", strokeWidthScale(d["归一化覆盖率"]))
                   }
+
+                  
                 }
 
                 if (this.popout) {
@@ -514,7 +518,78 @@ export default {
                       .on("mouseout", null)
                       .on("click", null);
                 }
-              });
+                if (this.popout){
+                  // 线路名称
+                  const text = `${d["线路"]}`;
+                  const fontsize = Math.min(width, height) * 0.02;
+                  const length = svgTextLength.visualWidth(text, fontsize);
+                  const totalLength = d.isCircle ? length : d.lineSegment.length();
+                  // const dy = d.isCircle ? -fontsize * 0.5 : (-fontsize * 0.5 - strokeWidthScale(d["归一化覆盖率"]) * 0.5);
+                  // const dy = (strokeWidthScale(d["归一化覆盖率"]) * 0.5);
+                  const dy = ((strokeWidthScale(d["归一化覆盖率"]) * 0.5) + (fontsize * 0.5)) / 2;
+                  let path = select(back, "detail-path-" + d.idx, "path")
+                      .attr('opacity', 0)
+                      .attr('id', `${id}-${d.idx}-line`);
+                  if (d.isCircle) {
+                    const radius = radiusScale(d["归一化覆盖率"]) + strokeWidthScale(d["归一化覆盖率"]) * 0.5;
+                    const center = d.center;
+                    const dR = length * 0.5 / radius;
+                    const dx = radius * Math.sin(dR);
+                    const dy = radius * Math.cos(dR);
+                    const x0 = center.x - dx;
+                    const y0 = center.y - dy;
+                    const x1 = center.x + dx;
+                    const y1 = center.y + dy;
+                    path.attr('d', `M${x0} ${y0} A${radius} ${radius} 0 0 1 ${x1} ${y1} A${radius} ${radius} 0 0 1 ${x0} ${y0}`);
+                  }
+                  else {
+                    const start = d.lineSegment.start.x < d.lineSegment.end.x ? d.lineSegment.start : d.lineSegment.end;
+                    const end = d.lineSegment.start.x < d.lineSegment.end.x ? d.lineSegment.end : d.lineSegment.start;
+                    path.attr('d', `M${start.x} ${start.y} L${end.x} ${end.y}`);
+                  }
+                  
+                  let textopacity = inTimeRange ? 0.65 : 0;
+                  let bordertextopacity = inTimeRange ? 0.55 : 0;
+                  // 删除已存在的 text 元素
+                  square.selectAll(`text.detail-${d.idx}-border`).remove();
+                  square.selectAll(`text.detail-${d.idx}`).remove();
+
+
+
+                  const textElement = g.append("text") // 在这里创建一个新的 text 元素
+                      .attr("class", `detail-${d.idx}`) // 添加唯一的类名
+                      .attr("font-size", fontsize*0.8)
+                      .attr("dy", dy)
+                      .attr("fill", d.color)
+                      .attr("opacity", textopacity)
+                      .style("letter-spacing", "5px")
+                      ;
+                  select(textElement, `detail-path-${d.idx}`, "textPath") // 添加唯一的 ID
+                      .attr("xlink:href", `#${id}-${d.idx}-line`)
+                      .attr("startOffset", (totalLength - length) / 3)
+                      .html(text)
+                      .style("font-family", "HelveticaNeue")
+                      .style("font-weight", "400"); // 边框粗细
+                      ;
+
+                  // 创建边框的 text 元素（现在是反的）
+                  const borderTextElement = g.append("text")
+                      .attr("class", `detail-${d.idx}-border`)
+                      .attr("font-size", fontsize*0.8)
+                      .attr("dy", dy)
+                      .attr("fill", "white") // 边框颜色
+                      .attr("opacity", bordertextopacity)
+                      .style("letter-spacing", "5px");
+                  select(borderTextElement, `detail-path-${d.idx}-border`, "textPath")
+                      .attr("xlink:href", `#${id}-${d.idx}-line`)
+                      .attr("startOffset", (totalLength - length) / 3)
+                      .html(text)
+                      .style("font-family", "HelveticaNeue")
+                      .style("font-weight", "400"); // 边框粗细
+
+                }
+            });
+              
         },
         drawExitButton(width, height) {
           const size = Math.min(width, height) * 0.03;
@@ -576,14 +651,14 @@ export default {
           const radiusScale = this.radiusScale;
           const datum = this.datum;
           const id = datum['城市名称'].replace(' ', '-');
-          const svgTextLength = this.svgTextLength;
           const self = this;
+          const svgTextLength = this.svgTextLength;
 
           if (lineSelected === null) {
             square.selectAll(".line")
                 .style("opacity", 1);
-            select(square, "detail", "text").remove();
-            select(back, "detail-path", "path").remove();
+            // select(square, "detail", "text").remove();
+            // select(back, "detail-path", "path").remove();
             select(square, "info", "text").remove();
           }
           else {
@@ -594,42 +669,8 @@ export default {
                 .each((d) => {
                   if (d.idx === lineSelected) {
                     //const text = `线路名称 Line Name: ${d["线路"]}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;线路覆盖率 Line Coverage: ${d["归一化覆盖率"]}`;
-                    const text = `线路名称 Line Name: ${d["线路"]}`;
-                    const fontsize = Math.min(width, height) * 0.03;
+  
                     const infoFontsize = Math.min(width, height) * 0.016;
-                    const length = svgTextLength.visualWidth(text, fontsize);
-                    const totalLength = d.isCircle ? length : d.lineSegment.length();
-                    const dy = d.isCircle ? -fontsize * 0.5 : (-fontsize * 0.5 - strokeWidthScale(d["归一化覆盖率"]) * 0.5);
-                    let path = select(back, "detail-path", "path")
-                        .attr('opacity', 0)
-                        .attr('id', `${id}-${d.idx}-line`);
-                    if (d.isCircle) {
-                      const radius = radiusScale(d["归一化覆盖率"]) + strokeWidthScale(d["归一化覆盖率"]) * 0.5;
-                      const center = d.center;
-                      const dR = length * 0.5 / radius;
-                      const dx = radius * Math.sin(dR);
-                      const dy = radius * Math.cos(dR);
-                      const x0 = center.x - dx;
-                      const y0 = center.y - dy;
-                      const x1 = center.x + dx;
-                      const y1 = center.y + dy;
-                      path.attr('d', `M${x0} ${y0} A${radius} ${radius} 0 0 1 ${x1} ${y1} A${radius} ${radius} 0 0 1 ${x0} ${y0}`);
-                    }
-                    else {
-                      const start = d.lineSegment.start.x < d.lineSegment.end.x ? d.lineSegment.start : d.lineSegment.end;
-                      const end = d.lineSegment.start.x < d.lineSegment.end.x ? d.lineSegment.end : d.lineSegment.start;
-                      path.attr('d', `M${start.x} ${start.y} L${end.x} ${end.y}`);
-                    }
-                    const textElement = select(square, "detail", "text")
-                        .attr("font-size", fontsize)
-                        .attr("dy", dy)
-                        .attr("fill", "#fff");
-                    select(textElement, "detail-path", "textPath")
-                        .attr("xlink:href", `#${id}-${lineSelected}-line`)
-                        .attr("startOffset", (totalLength - length) / 2)
-                        .html(text)
-                        .style("font-family", "HelveticaNeue");
-
                     const list = ["线路", "首发时间", "延长线时间", "起点站", "终点站", "车站数", "长度（千米）", "车型编组", "行驶时间（分钟）", "换乘站数目", "峰值车速", "配车数量"];
                     const info = {};
                     for (let k of list) {
@@ -675,16 +716,45 @@ export default {
             },
         },
         popout: {
-            handler() {
-              this.draw(this.realWidth, this.realHeight, this.duration);
-              this.updateTransform(this.duration);
-            },
+        handler() {
+            this.draw(this.realWidth, this.realHeight, this.duration);
+            this.updateTransform(this.duration);
+            if (!this.popout) {
+                this.$refs.unit.querySelectorAll('text').forEach(text => {
+                    // 检查 text 元素是否是线路名称
+                    if (text.getAttribute('class').startsWith('detail-')) {
+                        text.remove();
+                    }
+                });
+            }
         },
+    },
+
         lineSelected() {
-          setTimeout(() => {
+        setTimeout(() => {
             this.updateLines(this.realWidth, this.realHeight);
-          }, 0);
-        },
+            if (this.lineSelected != null) {
+                this.datum["地铁线路"].forEach((d, i) => {
+                    const isSelected = d.idx === this.lineSelected;
+                    const textElement = this.$refs.unit.querySelector(`.detail-${d.idx}`);
+                    const borderTextElement = this.$refs.unit.querySelector(`.detail-${d.idx}-border`);
+                    if (textElement) {  // 检查 text 元素是否存在
+                        textElement.style.display = isSelected ? '' : 'none';
+                        borderTextElement.style.display = isSelected ? '' : 'none';
+                    }
+                });
+            } else {
+                this.datum["地铁线路"].forEach((d, i) => {
+                    const textElement = this.$refs.unit.querySelector(`.detail-${d.idx}`);
+                    const borderTextElement = this.$refs.unit.querySelector(`.detail-${d.idx}-border`);
+                    if (textElement) {  // 检查 text 元素是否存在
+                        textElement.style.display = '';
+                        borderTextElement.style.display = '';
+                    }
+                });
+            }
+        }, 0);
+    },
         isBlackClicked: {
           handler() {
             this.drawLines(this.realWidth, this.realHeight);
