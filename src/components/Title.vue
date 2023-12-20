@@ -23,9 +23,25 @@
                 v-model="searchText"
                 :fetch-suggestions="getCountries"
                 placeholder="Country"
-                @select="select"
+                @select="selectCountry"
                 :trigger-on-focus="true"
-                :style="{width: searchWidth + 'px', height: searchHeight + 'px'}"
+                :style="{width: searchWidth/2 + 'px', height: searchHeight + 'px'}"
+            >
+                <template #suffix>
+                    <el-icon class="el-input__icon"><Search/></el-icon>
+                </template>
+                <template #default="{ item }">
+                    <div>{{ item }}</div>
+                </template>
+            </el-autocomplete>
+            <el-autocomplete
+                class="search-box-city"
+                v-model="searchTextCity"
+                :fetch-suggestions="getCities"
+                placeholder="City"
+                @select="selectCity"
+                :trigger-on-focus="true"
+                :style="{width: searchWidth/2 + 'px', height: searchHeight + 'px'}"
             >
                 <template #suffix>
                     <el-icon class="el-input__icon"><Search/></el-icon>
@@ -121,6 +137,7 @@ export default {
             legendfour: legendfour,
             legendfive: legendfive,
             searchText: "",
+            searchTextCity: "",
             isButtonClicked: false, 
         }
     },
@@ -151,10 +168,16 @@ export default {
         ...mapState([
             "data",
             "countrySelected",
+            "citySelectedButton",
         ]),
         countries() {
             return Array.from(
                 new Set(this.data.map(d => d["城市名称"].split(" ")[0]))
+            );
+        },
+        cities() {
+            return Array.from(
+                new Set(this.data.map(d => d["城市"].split(" ")[0]))
             );
         },
         titleFontsize() {
@@ -236,6 +259,7 @@ export default {
     methods: {
         ...mapActions([
             "updateCountrySelected",
+            "updateCitySelectedButton",
         ]),
         getCountries(queryString, cb) {
             const countries = this.countries;
@@ -243,9 +267,19 @@ export default {
                 countries : countries.filter(c => c.includes(queryString));
             cb(result);
         },
-        select(country) {
+        selectCountry(country) {
             this.searchText = country;
             this.updateCountrySelected(country);
+        },
+        getCities(queryString, cb) {
+            const cities = this.cities;
+            const result = queryString === '' ?
+                cities : cities.filter(c => c.includes(queryString));
+            cb(result);
+        },
+        selectCity(city) {
+            this.searchTextCity = city;
+            this.updateCitySelectedButton(city);
         },
         toggleLineColor() {
             this.$store.dispatch('updateIsBlackClicked', !this.$store.state.isBlackClicked);
@@ -256,6 +290,13 @@ export default {
             handler(val) {
                 if (val === "") {
                     this.updateCountrySelected(null);
+                }
+            }
+        },
+        searchTextCity: {
+            handler(val) {
+                if (val === "") {
+                    this.updateCitySelectedButton(null);
                 }
             }
         },

@@ -224,7 +224,7 @@ export default {
           const cityNameEn = select(square, "city-nameen", "text")
               .attr("dominant-baseline", "hanging")
               .attr("fill", "white")
-              .text(datum["城市英文标准"])
+              .text(datum["城市英文"])
               .style("font-family", "HelveticaNeue");
           if (duration > 0) {
             cityName.transition()
