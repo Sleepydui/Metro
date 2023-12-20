@@ -5,6 +5,7 @@ const store = createStore({
   state: {
     data: null,
     countrySelected: null, // 选中国家
+    citySelectedButton: null, // 选中城市
     cityHovered: null, // 鼠标悬浮的城市
     citySelected: null, // 选中城市
     timeRange: null, // 选中的时间范围
@@ -18,20 +19,31 @@ const store = createStore({
   getters: {
     cities(state) {
       return state.data.filter(d => {
-        if (state.countrySelected === null || state.countrySelected === d["城市名称"].split(" ")[0]) {
-          // console.log(state.countrySelected, d["城市名称"]);
+        if (state.countrySelected === null && state.citySelectedButton === null) {
+          return true;
+        }
+        if (state.countrySelected !== null && state.countrySelected === d["城市名称"].split(" ")[0]) {
+          console.log(state.countrySelected, d["城市名称"]);
+          return true;
+        }
+        if (state.citySelectedButton !== null && state.citySelectedButton === d["城市"].split(" ")[0]) {
+          console.log(state.citySelectedButton, d["城市"]);
           return true;
         }
         return false; //filter决定是否保留元素
       });
     },
   },
+  
   mutations: { //同步的修改state的操作，只有在这里才能修改state
     updateData(state, payload) {
       state.data = payload; //payload是传入的参数
     },
     updateCountrySelected(state, payload) {
       state.countrySelected = payload;
+    },
+    updateCitySelectedButton(state, payload) {
+      state.citySelectedButton = payload;
     },
     updateCityHovered(state, payload) {
       state.cityHovered = payload;
@@ -61,6 +73,9 @@ const store = createStore({
     },
     updateCountrySelected({ commit }, payload) {
       commit('updateCountrySelected', payload);
+    },
+    updateCitySelectedButton({ commit }, payload) {
+      commit('updateCitySelectedButton', payload);
     },
     updateCityHovered({ commit }, payload) {
       commit('updateCityHovered', payload);
