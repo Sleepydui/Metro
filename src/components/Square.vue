@@ -117,6 +117,12 @@ export default {
         isBlackClicked() {
           return this.$store.state.isBlackClicked;
         },
+        countrySelected() {
+          return this.$store.state.countrySelected;
+        },
+        citySelectedButton() {
+          return this.$store.state.citySelectedButton;
+        },
     },
     methods: {
         ...mapActions([
@@ -434,7 +440,28 @@ export default {
                   inTimeRange = true;
                 }
 
-                let opacity = inTimeRange ? 0.95 : 0;
+                // 根据 this.$store.state.countrySelected 和 this.$store.state.citySelectedButton 的值来决定线条的颜色
+                let color, opacity;
+if (this.isBlackClicked) {
+  color = "white";  // 白色
+  opacity = inTimeRange ? 0.85 : 0;  // 透明度为0.85
+} else if (this.citySelectedButton !== null && this.citySelectedButton === datum["城市"].split(" ")[0]) {
+  color = d.color;  // 原始颜色
+  opacity = inTimeRange ? 0.95 : 0;  // 如果在时间范围内，则设置为0.95，否则设置为0
+} else if (this.citySelectedButton === null && this.countrySelected !== null && this.countrySelected === datum["城市名称"].split(" ")[0]) {
+  color = d.color;  // 原始颜色
+  opacity = inTimeRange ? 0.95 : 0;  // 如果在时间范围内，则设置为0.95，否则设置为0
+} else if (this.countrySelected === null && this.citySelectedButton === null) {
+  color = d.color;  // 原始颜色
+  opacity = inTimeRange ? 0.95 : 0;  // 如果在时间范围内，则设置为0.95，否则设置为0
+} else {
+  color = "white";  // 白色
+  opacity = inTimeRange ? 0.85 : 0;  // 透明度为0.85
+}
+
+
+
+                // let opacity = inTimeRange ? 0.95 : 0;
                 
 
                 if (d.isCircle) {
@@ -442,8 +469,8 @@ export default {
                   const circle = select(g, "circle-extension", "circle")
                       // .attr('id', `${id}-${d["线路"]}-line`)
                       .style("fill", "none")
-                      .style("stroke", this.isBlackClicked ? "white" : d.color || "white")
-                      .style("stroke-opacity", opacity === 0 ? 0 : (this.isBlackClicked ? 0.85 : opacity))
+                      .style("stroke", color)
+                      .style("stroke-opacity", opacity)
                       .attr("clip-path", `url(#square-clip-path-${id})`);
 
                   if (duration > 0) {
@@ -471,8 +498,8 @@ export default {
                   // 绘制线路线段
                   const line = select(g, "line-extension", "line")
                       // .attr('id', `${id}-${d["线路"]}-line`)
-                      .style("stroke", this.isBlackClicked ? "white" : d.color || "white")
-                      .style("stroke-opacity", opacity === 0 ? 0 : (this.isBlackClicked ? 0.85 : opacity))
+                      .style("stroke", color)
+                      .style("stroke-opacity", opacity)
                       .style("stroke-linecap", "round")
                       .attr("clip-path", `url(#square-clip-path-${id})`);
 
@@ -520,7 +547,7 @@ export default {
                 }
                 if (this.popout){
                   // 线路名称
-                  const text = `${d["线路"]}`;
+                  const text = `${d["线路英文名"]}`;
                   const fontsize = Math.min(width, height) * 0.02;
                   const length = svgTextLength.visualWidth(text, fontsize);
                   const totalLength = d.isCircle ? length : d.lineSegment.length();
@@ -760,6 +787,12 @@ export default {
             this.drawLines(this.realWidth, this.realHeight);
           },
           immediate: true,
+        },
+        countrySelected() {
+          this.drawLines(this.realWidth, this.realHeight);
+        },
+        citySelectedButton() {
+          this.drawLines(this.realWidth, this.realHeight);
         },
     }
 }

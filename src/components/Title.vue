@@ -262,7 +262,11 @@ export default {
             "updateCitySelectedButton",
         ]),
         getCountries(queryString, cb) {
-            const countries = this.countries;
+            let countries = this.countries;
+            // 如果选中了一个城市，那么只保留与该城市相关的国家
+            if (this.citySelectedButton !== null) {
+                countries = countries.filter(c => this.data.find(d => d["城市"].split(" ")[0] === this.citySelectedButton && d["城市名称"].split(" ")[0] === c));
+            }
             const result = queryString === '' ?
                 countries : countries.filter(c => c.includes(queryString));
             cb(result);
@@ -272,10 +276,14 @@ export default {
             this.updateCountrySelected(country);
         },
         getCities(queryString, cb) {
-            const cities = this.cities;
-            const result = queryString === '' ?
-                cities : cities.filter(c => c.includes(queryString));
-            cb(result);
+        let cities = this.cities;
+        // 如果选中了一个国家，那么只保留与该国家相关的城市
+        if (this.countrySelected !== null) {
+            cities = cities.filter(c => this.data.find(d => d["城市名称"].split(" ")[0] === this.countrySelected && d["城市"].split(" ")[0] === c));
+        }
+        const result = queryString === '' ?
+            cities : cities.filter(c => c.includes(queryString));
+        cb(result);
         },
         selectCity(city) {
             this.searchTextCity = city;
