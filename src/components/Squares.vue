@@ -69,6 +69,7 @@ export default {
     ...mapState({
         timeRange: (state) => state.timeRange,
         countrySelected: (state) => state.countrySelected,
+        citySelectedButton: (state) => state.citySelectedButton,
         cityHovered: (state) => state.cityHovered,
         citySelected: (state) => state.citySelected,
         data: (state) => state.data,
