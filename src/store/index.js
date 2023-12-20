@@ -16,25 +16,27 @@ const store = createStore({
     isBlackClicked: false, // 白or彩切换
     //全局的状态变量
   },
+  // getters: {
+  //   cities(state) {
+  //     return state.data.filter(d => {
+  //       if (state.countrySelected === null && state.citySelectedButton === null) {
+  //         return true;
+  //       }
+  //       if (state.countrySelected !== null && state.countrySelected === d["城市名称"].split(" ")[0]) {
+  //         return true;
+  //       }
+  //       if (state.citySelectedButton !== null && state.citySelectedButton === d["城市"].split(" ")[0]) {
+  //         return true;
+  //       }
+  //       return false; //filter决定是否保留元素
+  //     });
+  //   },
+  // },
   getters: {
     cities(state) {
-      return state.data.filter(d => {
-        if (state.countrySelected === null && state.citySelectedButton === null) {
-          return true;
-        }
-        if (state.countrySelected !== null && state.countrySelected === d["城市名称"].split(" ")[0]) {
-          console.log(state.countrySelected, d["城市名称"]);
-          return true;
-        }
-        if (state.citySelectedButton !== null && state.citySelectedButton === d["城市"].split(" ")[0]) {
-          console.log(state.citySelectedButton, d["城市"]);
-          return true;
-        }
-        return false; //filter决定是否保留元素
-      });
+      return state.data;  // 直接返回所有元素
     },
-  },
-  
+  },  
   mutations: { //同步的修改state的操作，只有在这里才能修改state
     updateData(state, payload) {
       state.data = payload; //payload是传入的参数
