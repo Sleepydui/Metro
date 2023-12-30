@@ -301,7 +301,7 @@ export default {
             });
 
             // 计算一个初始的 lineScale
-            let initialLineScale = 4000;
+            let initialLineScale = 3000;
 
             // 创建一个投影
             const projection = d3.geoMercator()
@@ -315,8 +315,27 @@ export default {
               const realEndCoordinates = projection([parseFloat(l["终点站经度"]), parseFloat(l["终点站纬度"])]);
               const realStart = new Point(realStartCoordinates[0], realStartCoordinates[1]);
               const realEnd = new Point(realEndCoordinates[0], realEndCoordinates[1]);
+              
               l.realStart = realStart;
               l.realEnd = realEnd;
+
+              if (l['中间站1']){
+                console.log(l['中间站1'])
+                const realMiddle1Coordinates = projection([parseFloat(l["中间站1经度"]), parseFloat(l["中间站1纬度"])]);
+                const realMiddle1 = new Point(realMiddle1Coordinates[0], realMiddle1Coordinates[1]);
+                l.realMiddle1 = realMiddle1;
+                l.isCurve = true;
+              }
+              
+              if (l['中间站1'] && l['中间站2']) {
+                const realMiddle1Coordinates = projection([parseFloat(l["中间站1经度"]), parseFloat(l["中间站1纬度"])]);
+                const realMiddle1 = new Point(realMiddle1Coordinates[0], realMiddle1Coordinates[1]);
+                const realMiddle2Coordinates = projection([parseFloat(l["中间站2经度"]), parseFloat(l["中间站2纬度"])]);
+                const realMiddle2 = new Point(realMiddle2Coordinates[0], realMiddle2Coordinates[1]);
+                l.realMiddle1 = realMiddle1;
+                l.realMiddle2 = realMiddle2;
+                l.isCurve = true;
+              }
 
               if (realEnd.distanceToPoint(realStart) === 0) {
                 l.isCircle = true;
@@ -357,27 +376,59 @@ export default {
 
           lines.forEach(d => {
             if (d.isCircle) {
-              d.center = center;
-            }
-            else {
-              const realLine = d.realLine;
-              const realP = realCenter.projectionOnLine(realLine);
-              const p = new Point(
-                  center.x + (realP.x - realCenter.x) * lineScale,
-                  center.y + (realP.y - realCenter.y) * lineScale,
-              );
-              const line = Line.createParallelLineThroughPoint(realLine, p);
+                d.center = center;
+            } else {
+                const realLine = d.realLine;
+                const realP = realCenter.projectionOnLine(realLine);
+                const p = new Point(
+                    center.x + (realP.x - realCenter.x) * lineScale,
+                    center.y + (realP.y - realCenter.y) * lineScale,
+                );
+                const line = Line.createParallelLineThroughPoint(realLine, p);
 
-              // 计算线路直线与矩形边界的交点
-              const intersectionPoints = borders
-                  .map(b => b.intersectionWithLine(line))
-                  .filter(p => p !== null);
+                // 计算线路直线与矩形边界的交点
+                const intersectionPoints = borders
+                    .map(b => b.intersectionWithLine(line))
+                    .filter(p => p !== null);
 
-              // 把求得的线段延伸一点，不然会看出来线段端点
-              d.lineSegment = new LineSegment(...intersectionPoints)
-                  .extension(size * 0.5);
+                // 如果线路有中间站点，那么计算新的中间站点的坐标
+                let middle1 = null;
+                let middle2 = null;
+                if (d.realMiddle1 && !d.realMiddle2) {
+                    middle1 = new Point(
+                        (d.realMiddle1.x - realCenter.x) * lineScale + center.x,
+                        (d.realMiddle1.y - realCenter.y) * lineScale + center.y,
+                    );
+                    d.lineSegment = new LineSegment(intersectionPoints[0], intersectionPoints[1],middle1);
+                    console.log(d.lineSegment)
+                    console.log(middle1)
+                }
+                else if (d.realMiddle1 && d.realMiddle2) {
+                    middle1 = new Point(
+                        (d.realMiddle1.x - realCenter.x) * lineScale + center.x,
+                        (d.realMiddle1.y - realCenter.y) * lineScale + center.y,
+                    );
+                    middle2 = new Point(
+                          (d.realMiddle2.x - realCenter.x) * lineScale + center.x,
+                          (d.realMiddle2.y - realCenter.y) * lineScale + center.y,
+                      );
+                    d.lineSegment = new LineSegment(intersectionPoints[0], intersectionPoints[1],middle1,middle2);
+                    console.log(d.lineSegment)
+                    console.log(middle1)
+                }
+               else {
+                    d.lineSegment = new LineSegment(...intersectionPoints);
+                }
+
+                // 把求得的线段延伸一点，不然会看出来线段端点
+                // !!!!!
+                // d.lineSegment = d.lineSegment.extension(size * 0.5);
+                if (d.isCurve){
+                  console.log(111)
+                  console.log(d.lineSegment)}
             }
-          });
+        });
+
         },
 
         /**
@@ -442,22 +493,22 @@ export default {
 
                 // 根据 this.$store.state.countrySelected 和 this.$store.state.citySelectedButton 的值来决定线条的颜色
                 let color, opacity;
-if (this.isBlackClicked) {
-  color = "white";  // 白色
-  opacity = inTimeRange ? 0.85 : 0;  // 透明度为0.85
-} else if (this.citySelectedButton !== null && this.citySelectedButton === datum["城市"].split(" ")[0]) {
-  color = d.color;  // 原始颜色
-  opacity = inTimeRange ? 0.95 : 0;  // 如果在时间范围内，则设置为0.95，否则设置为0
-} else if (this.citySelectedButton === null && this.countrySelected !== null && this.countrySelected === datum["城市名称"].split(" ")[0]) {
-  color = d.color;  // 原始颜色
-  opacity = inTimeRange ? 0.95 : 0;  // 如果在时间范围内，则设置为0.95，否则设置为0
-} else if (this.countrySelected === null && this.citySelectedButton === null) {
-  color = d.color;  // 原始颜色
-  opacity = inTimeRange ? 0.95 : 0;  // 如果在时间范围内，则设置为0.95，否则设置为0
-} else {
-  color = "white";  // 白色
-  opacity = inTimeRange ? 0.85 : 0;  // 透明度为0.85
-}
+                if (this.isBlackClicked) {
+                  color = "white";  // 白色
+                  opacity = inTimeRange ? 0.85 : 0;  // 透明度为0.85
+                } else if (this.citySelectedButton !== null && this.citySelectedButton === datum["城市"].split(" ")[0]) {
+                  color = d.color;  // 原始颜色
+                  opacity = inTimeRange ? 0.95 : 0;  // 如果在时间范围内，则设置为0.95，否则设置为0
+                } else if (this.citySelectedButton === null && this.countrySelected !== null && this.countrySelected === datum["城市名称"].split(" ")[0]) {
+                  color = d.color;  // 原始颜色
+                  opacity = inTimeRange ? 0.95 : 0;  // 如果在时间范围内，则设置为0.95，否则设置为0
+                } else if (this.countrySelected === null && this.citySelectedButton === null) {
+                  color = d.color;  // 原始颜色
+                  opacity = inTimeRange ? 0.95 : 0;  // 如果在时间范围内，则设置为0.95，否则设置为0
+                } else {
+                  color = "white";  // 白色
+                  opacity = inTimeRange ? 0.85 : 0;  // 透明度为0.85
+                }
 
 
 
@@ -489,6 +540,50 @@ if (this.isBlackClicked) {
                         .style("stroke-width", strokeWidthScale(d["归一化覆盖率"]));
                   }
                 }
+                else if (d.isCurve) {
+                  d3.select('svg').selectAll('*').remove();
+
+                  console.log(d)
+                  // 计算实际绘制的线路的直线方程
+                  const lineSegment = d.lineSegment;
+                  const start = lineSegment.start.x < lineSegment.end.x ? lineSegment.start : lineSegment.end;
+                  const end = lineSegment.start.x < lineSegment.end.x ? lineSegment.end : lineSegment.start;
+                  const middle1 = lineSegment.middle1
+                  if (lineSegment.middle2)
+                    {
+                      const middle2 = lineSegment.middle2
+                      var points = [start, middle1, middle2, end]
+                    }
+                  else {
+                    var points = [start, middle1, end]
+                  }
+
+                  // 创建一个 d3.line 生成器
+                  const lineGenerator = d3.line()
+                    .x(d => d.x)
+                    .y(d => d.y);
+
+                  // 绘制线路线段
+                  const line = select(g, "line-extension", "path")
+                      .style("fill", "none")
+                      .style("stroke", color)
+                      .style("stroke-opacity", opacity)
+                      .style("stroke-linecap", "suqare") // round  butt  square
+                      .attr("clip-path", `url(#square-clip-path-${id})`);
+
+                  if (duration > 0) {
+                    line.transition()
+                        .duration(duration)
+                        .attr("d", lineGenerator(points))
+                        .style("stroke-width", strokeWidthScale(d["归一化覆盖率"]))
+                  }
+                  else {
+                    line
+                        .attr("d", lineGenerator(points))
+                        .style("stroke-width", strokeWidthScale(d["归一化覆盖率"]))
+                  }
+                }
+
                 else {
                   // 计算实际绘制的线路的直线方程
                   const lineSegment = d.lineSegment;
@@ -500,7 +595,7 @@ if (this.isBlackClicked) {
                       // .attr('id', `${id}-${d["线路"]}-line`)
                       .style("stroke", color)
                       .style("stroke-opacity", opacity)
-                      .style("stroke-linecap", "round")
+                      .style("stroke-linecap", "square")
                       .attr("clip-path", `url(#square-clip-path-${id})`);
 
                   if (duration > 0) {
@@ -570,9 +665,17 @@ if (this.isBlackClicked) {
                     path.attr('d', `M${x0} ${y0} A${radius} ${radius} 0 0 1 ${x1} ${y1} A${radius} ${radius} 0 0 1 ${x0} ${y0}`);
                   }
                   else {
-                    const start = d.lineSegment.start.x < d.lineSegment.end.x ? d.lineSegment.start : d.lineSegment.end;
-                    const end = d.lineSegment.start.x < d.lineSegment.end.x ? d.lineSegment.end : d.lineSegment.start;
-                    path.attr('d', `M${start.x} ${start.y} L${end.x} ${end.y}`);
+                    if (d.isCurve) {
+                      const start = d.lineSegment.start.x < d.lineSegment.end.x ? d.lineSegment.start : d.lineSegment.end;
+                      const end = d.lineSegment.start.x < d.lineSegment.end.x ? d.lineSegment.end : d.lineSegment.start;
+                      const middle1 = d.lineSegment.middle1
+                      path.attr('d', `M${start.x} ${start.y} L${middle1.x} ${middle1.y}`);
+                    }
+                    else{
+                      const start = d.lineSegment.start.x < d.lineSegment.end.x ? d.lineSegment.start : d.lineSegment.end;
+                      const end = d.lineSegment.start.x < d.lineSegment.end.x ? d.lineSegment.end : d.lineSegment.start;
+                      path.attr('d', `M${start.x} ${start.y} L${end.x} ${end.y}`);
+                    }
                   }
                   
                   let textopacity = inTimeRange ? 0.65 : 0;
@@ -672,7 +775,7 @@ if (this.isBlackClicked) {
           const square = d3.select(this.$refs.unit);
           const back = d3.select(this.$refs.back);
           const lineSelected = this.lineHovered ?? this.lineClicked;
-          const dehighlightOpacity = 0.5;
+          const dehighlightOpacity = 0.3;
           const select = this.select;
           const strokeWidthScale = this.strokeWidthScale;
           const radiusScale = this.radiusScale;
