@@ -51,9 +51,11 @@ export class LineSegment {
    * @param start {Point}
    * @param end {Point}
    */
-  constructor(start, end) {
+  constructor(start, end, middle1 = null, middle2 = null) {
     this.start = start;
     this.end = end;
+    this.middle1 = middle1;
+    this.middle2 = middle2;
   }
 
   toString() {
@@ -98,10 +100,20 @@ export class LineSegment {
    * @param length
    */
   extension(length) {
-    const x1 = this.start.x;
-    const y1 = this.start.y;
-    const x2 = this.end.x;
-    const y2 = this.end.y;
+    let x1, y1, x2, y2;
+    if (this.middle) {
+      // 如果存在 middle 点，那么以 middle 为中心，start 和 end 为两端
+      x1 = this.middle.x;
+      y1 = this.middle.y;
+      x2 = this.start.x + this.end.x - this.middle.x;  // 计算 middle 对称的点
+      y2 = this.start.y + this.end.y - this.middle.y;
+    } else {
+      // 如果不存在 middle 点，那么以 start 为起点，end 为终点
+      x1 = this.start.x;
+      y1 = this.start.y;
+      x2 = this.end.x;
+      y2 = this.end.y;
+    }
     const segmentVector = { x: x2 - x1, y: y2 - y1 };
     const norm = Math.sqrt(segmentVector.x * segmentVector.x + segmentVector.y * segmentVector.y);
     const x3 = x1 - segmentVector.x / norm * length;
@@ -110,6 +122,7 @@ export class LineSegment {
     const y4 = y2 + segmentVector.y / norm * length;
     return new LineSegment(new Point(x3, y3), new Point(x4, y4));
   }
+  
 }
 export class Line {
   /**
